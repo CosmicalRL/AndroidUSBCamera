@@ -1,21 +1,86 @@
+<!-- res/layout/activity_main.xml -->
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/black"
-    tools:context=".MainActivity">
+    android:background="#000000">
 
-    <FrameLayout
-        android:id="@+id/fragment_container"
+    <android.opengl.GLSurfaceView
+        android:id="@+id/glSurfaceView"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.0"
-        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintDimensionRatio="9:16"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.0" />
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <FrameLayout
+        android:id="@+id/overlayContainer"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:background="@android:color/transparent"
+        app:layout_constraintTop_toTopOf="@id/glSurfaceView"
+        app:layout_constraintBottom_toBottomOf="@id/glSurfaceView"
+        app:layout_constraintStart_toStartOf="@id/glSurfaceView"
+        app:layout_constraintEnd_toEndOf="@id/glSurfaceView">
+
+        <!--
+            Off-screen WebView used purely as a texture source.
+            visibility="invisible" keeps it measured/laid out (required
+            for View#draw(Canvas) to produce valid pixels) without the
+            framework compositing it into the normal view hierarchy.
+        -->
+        <WebView
+            android:id="@+id/pipWebView"
+            android:layout_width="480dp"
+            android:layout_height="270dp"
+            android:layout_gravity="top|start"
+            android:visibility="invisible" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom"
+            android:orientation="horizontal"
+            android:gravity="center"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:paddingBottom="32dp"
+            android:background="@android:color/transparent">
+
+            <Button
+                android:id="@+id/btnGoLive"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginEnd="8dp"
+                android:text="Go Live"
+                android:backgroundTint="#E53935"
+                android:textColor="#FFFFFF" />
+
+            <Button
+                android:id="@+id/btnSaveReplay"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginEnd="8dp"
+                android:text="Save Replay"
+                android:backgroundTint="#1E88E5"
+                android:textColor="#FFFFFF" />
+
+            <Button
+                android:id="@+id/btnScenes"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Scenes"
+                android:backgroundTint="#43A047"
+                android:textColor="#FFFFFF" />
+
+        </LinearLayout>
+
+    </FrameLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
