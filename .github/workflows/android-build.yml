@@ -11,22 +11,26 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Java 11
+      - name: Setup Java 17 (for Android SDK)
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Setup Java 11 (for Gradle)
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '11'
           cache: gradle
 
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
-
       - name: Create local.properties
-        run: |
-          echo "sdk.dir=$ANDROID_SDK_ROOT" > local.properties
+        run: echo "sdk.dir=$ANDROID_SDK_ROOT" > local.properties
 
       - name: Make Gradle executable
         run: chmod +x gradlew
