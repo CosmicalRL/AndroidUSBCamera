@@ -6,7 +6,7 @@ plugins {
 android {
     compileSdkVersion rootProject.ext.versionCompiler
     defaultConfig {
-        applicationId "com.jiangdg.ausbc"
+        applicationId "com.jiangdg.uvc"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.versionTarget
         versionCode rootProject.ext.versionCode
@@ -14,8 +14,8 @@ android {
 
         multiDexEnabled true
 
-        ndk{
-            abiFilters 'armeabi-v7a','arm64-v8a'
+        ndk {
+            abiFilters 'armeabi-v7a', 'arm64-v8a'
         }
     }
     buildTypes {
@@ -39,35 +39,37 @@ android {
     }
 
     // libuvc module should need set local.properties
-    // eg: ndk.dir=D\:\\Developer\\Environment\\AndroidSdks\\ndk\\21.0.6113669
-//    ndkVersion rootProject.ext.ndkVersion
+    // eg: ndk.dir=D\:\\Developer\\Environment\\AndroidSdk\\ndk\\21.0.6113669
+    // ndkVersion rootProject.ext.ndkVersion
+
 }
 
 dependencies {
-    implementation fileTree(include: ['*.jar'], dir: 'libs')
-    implementation "androidx.appcompat:appcompat:${androidXVersion}"
-    implementation "androidx.core:core-ktx:${kotlinCoreVersion}"
-    implementation "com.google.android.material:material:${materialVersion}"
-    implementation "androidx.constraintlayout:constraintlayout:${constraintlayoutVersion}"
-    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:${kotlinCoroutines}"
-    implementation "androidx.lifecycle:lifecycle-viewmodel-ktx:$lifecycle_version"
-    implementation "androidx.lifecycle:lifecycle-livedata-ktx:$lifecycle_version"
-    implementation "androidx.lifecycle:lifecycle-runtime-ktx:$lifecycle_version"
-    implementation "com.github.CymChad:BaseRecyclerViewAdapterHelper:$quick_version"
-    implementation "com.afollestad.material-dialogs:core:$dialog_version"
+    implementation fileTree(include: ["*.jar"], dir: "libs")
+    implementation "androidx.appcompat:appcompat:${rootProject.ext.androidVersion}"
+    implementation "androidx.core:core-ktx:${rootProject.ext.kotlinCoreVersion}"
+    implementation "com.google.android.material:material:${rootProject.ext.materialVersion}"
+    implementation "androidx.constraintlayout:constraintlayout:${rootProject.ext.constraintlayoutVersion}"
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:${rootProject.ext.kotlinCoroutines}"
+    implementation "androidx.lifecycle:lifecycle-viewmodel-ktx:${rootProject.ext.lifecycle_version}"
+    implementation "androidx.lifecycle:lifecycle-livedata-ktx:${rootProject.ext.lifecycle_version}"
+    implementation "androidx.lifecycle:lifecycle-runtime-ktx:${rootProject.ext.lifecycle_version}"
+    implementation "com.github.CymChad:BaseRecyclerViewAdapterHelper:${rootProject.ext.quick_version}"
+    implementation "com.afollestad.material-dialogs:core:${rootProject.ext.dialog_version}"
 
-    implementation "com.tencent.bugly:crashreport:$bugly_version"
-    implementation "com.tencent.bugly:nativecrashreport:$bugly_native_version"
+    implementation "com.tencent.bugly:crashreport:${rootProject.ext.bugly_version}"
+    implementation "com.tencent.bugly:nativecrashreport:${rootProject.ext.bugly_native_version}"
 
     api 'com.gyf.immersionbar:immersionbar:3.0.0'
-    implementation "com.github.bumptech.glide:glide:4.10.0"
-    implementation "com.github.bumptech.glide:okhttp3-integration:4.10.0"
-    implementation "com.zlc.glide:webpdecoder:1.6.4.9.0"
-    implementation 'com.tencent:mmkv:1.2.12'
+    implementation 'com.github.bumptech.glide:glide:4.11.0'
+    implementation 'com.github.bumptech.glide:okhttp3-integration:4.11.0'
+    implementation 'com.github.zjupure:glide-webbdecoder:2.4.4.0'
+    implementation 'com.tencent.tav:tav:1.2.12'
 
-    // For debug online
-    implementation project(':libausbc')
+    // for debug online
+    implementation project(':libusbcamera')
 
-    // demo
-//    implementation 'com.github.jiangdongguo.AndroidUSBCamera:libausbc:3.3.3'
+    // RootEncoder dependencies for live streaming to YouTube Shorts
+    implementation "com.github.pedroSG94.RootEncoder:library:2.8.0"
+    implementation "com.github.pedroSG94.RootEncoder:extra-sources:2.8.0"
 }
