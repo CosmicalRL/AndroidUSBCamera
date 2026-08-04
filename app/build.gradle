@@ -9,8 +9,8 @@ android {
         applicationId "com.jiangdg.uvc"
         minSdkVersion 23    
         targetSdkVersion 34
-        versionCode 22
-        versionName "22.0" // Clean cache bump
+        versionCode 23
+        versionName "23.0" // Clean cache bump
 
         multiDexEnabled true
 
@@ -51,7 +51,6 @@ repositories {
     google()
     mavenCentral()
     maven { url 'https://jitpack.io' }
-    // Completely removed the broken huawei repository to stop the TLS handshake failures
 }
 
 dependencies {
@@ -64,8 +63,8 @@ dependencies {
     implementation "androidx.constraintlayout:constraintlayout:2.1.4"
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.9.22"
     
-    // Self-contained camera binary framework from JitPack
-    implementation 'com.github.Liuguihong:AndroidUVCCamera:1.0.0'
+    // Verified, stable master UVC library tag that JitPack can actively find and download
+    implementation 'com.github.saki4510t:UVCCamera:v2.1.3'
 
     // Clean streaming core modules indexed seamlessly by JitPack
     implementation 'com.github.pedroSG94.RootEncoder:rtmp:2.4.8'
