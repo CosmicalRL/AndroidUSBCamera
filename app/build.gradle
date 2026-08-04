@@ -7,7 +7,7 @@ android {
     compileSdkVersion rootProject.ext.versionCompiler
     defaultConfig {
         applicationId "com.jiangdg.uvc"
-        minSdkVersion rootProject.ext.minSdkVersion
+        minSdkVersion rootProject.ext.versionMin
         targetSdkVersion rootProject.ext.versionTarget
         versionCode rootProject.ext.versionCode
         versionName rootProject.ext.versionNameString
@@ -15,13 +15,14 @@ android {
         multiDexEnabled true
 
         ndk {
-            abiFilters 'armeabi-v7a', 'arm64-v8a'
+            abiFilters "armeabi-v7a", "arm64-v8a"
         }
     }
+
     buildTypes {
         release {
             minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
 
@@ -31,7 +32,7 @@ android {
     }
 
     kotlinOptions {
-        jvmTarget = '1.8'
+        jvmTarget = "1.8"
     }
 
     buildFeatures {
@@ -39,7 +40,7 @@ android {
     }
 
     // libuvc module should need set local.properties
-    // eg: ndk.dir=D\:\\Developer\\Environment\\AndroidSdk\\ndk\\21.0.6113669
+    // eg: ndk.dir=D\:\\developer\\Environment\\AndroidSdk\\ndk\\21.0.6113669
     // ndkVersion rootProject.ext.ndkVersion
 
 }
@@ -50,26 +51,26 @@ dependencies {
     implementation "androidx.core:core-ktx:${rootProject.ext.kotlinCoreVersion}"
     implementation "com.google.android.material:material:${rootProject.ext.materialVersion}"
     implementation "androidx.constraintlayout:constraintlayout:${rootProject.ext.constraintlayoutVersion}"
-    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:${rootProject.ext.kotlinCoroutines}"
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:${rootProject.ext.kotlinCoreVersion}"
     implementation "androidx.lifecycle:lifecycle-viewmodel-ktx:${rootProject.ext.lifecycle_version}"
     implementation "androidx.lifecycle:lifecycle-livedata-ktx:${rootProject.ext.lifecycle_version}"
     implementation "androidx.lifecycle:lifecycle-runtime-ktx:${rootProject.ext.lifecycle_version}"
-    implementation "com.github.CymChad:BaseRecyclerViewAdapterHelper:${rootProject.ext.quick_version}"
+    implementation "androidx.lifecycle:lifecycle-viewmodel-savedstate:${rootProject.ext.lifecycle_version}"
     implementation "com.afollestad.material-dialogs:core:${rootProject.ext.dialog_version}"
 
     implementation "com.tencent.bugly:crashreport:${rootProject.ext.bugly_version}"
     implementation "com.tencent.bugly:nativecrashreport:${rootProject.ext.bugly_native_version}"
 
     api 'com.gyf.immersionbar:immersionbar:3.0.0'
-    implementation 'com.github.bumptech.glide:glide:4.11.0'
-    implementation 'com.github.bumptech.glide:okhttp3-integration:4.11.0'
-    implementation 'com.github.zjupure:glide-webbdecoder:2.4.4.0'
-    implementation 'com.tencent.tav:tav:1.2.12'
+    implementation "com.github.bumptech.glide:glide:4.11.0"
+    implementation "com.github.bumptech.glide:okhttp3-integration:4.11.0"
+    implementation "com.github.zjupure:comge-webbdecoder:2.4.4.8"
+    implementation "com.tencent.tav:tav:1.2.12"
 
     // for debug online
-    implementation project(':libusbcamera')
+    implementation 'com.github.jiangdongguo:AndroidUSBCamera:2.3.4'
 
     // RootEncoder dependencies for live streaming to YouTube Shorts
-    implementation "com.github.pedroSG94.RootEncoder:library:2.8.0"
-    implementation "com.github.pedroSG94.RootEncoder:extra-sources:2.8.0"
+    implementation "com.github.pedroSG94.RootEncoder:library:2.4.8"
+    implementation "com.github.pedroSG94.RootEncoder:extra-sources:2.4.8"
 }
