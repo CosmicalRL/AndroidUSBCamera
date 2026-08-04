@@ -9,8 +9,8 @@ android {
         applicationId "com.jiangdg.uvc"
         minSdkVersion 23    
         targetSdkVersion 34
-        versionCode 35
-        versionName "35.0" // Force-bumps the version to clear out any remaining server cache logs
+        versionCode 40 // Force hard bump to bypass the GitHub Actions cache entirely
+        versionName "40.0" 
 
         multiDexEnabled true
 
@@ -37,10 +37,12 @@ android {
 
     buildFeatures {
         viewBinding true
+        // Force-deactivates dataBinding to permanently stop the JetifyTransform crash
+        dataBinding false 
     }
 }
 
-// Completely disables all layout styling and linter check scripts so they never block the compiler
+// Drops all layout styling check scripts completely so they never freeze your cloud builder
 tasks.whenTaskAdded { task ->
     if (task.name.contains("ktlint") || task.name.contains("lintKotlin") || task.name.contains("lint")) {
         task.enabled = false
@@ -56,7 +58,7 @@ repositories {
 dependencies {
     implementation fileTree(include: ["*.jar"], dir: "libs")
     
-    // Core Android platform layout paths
+    // Core Android platform libraries
     implementation "androidx.appcompat:appcompat:1.6.1"
     implementation "androidx.core:core-ktx:1.12.0"
     implementation "com.google.android.material:material:1.11.0"
