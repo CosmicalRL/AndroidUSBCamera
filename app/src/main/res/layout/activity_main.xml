@@ -1,86 +1,633 @@
-<!-- res/layout/activity_main.xml -->
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<!--
+  activity_main.xml
+  Dark, premium mobile live-streaming control surface.
+
+  Required drawable resources (create alongside this layout):
+    res/drawable/bg_root_canvas.xml            solid #121212
+    res/drawable/bg_pill_translucent_dark.xml   rounded pill, #99000000
+    res/drawable/bg_circle_ripple.xml           oval ripple, transparent center
+    res/drawable/bg_counter_pill.xml            rounded pill, #B3000000
+    res/drawable/bg_switch_track.xml            selector: checked #4DFFEB3B / unchecked #33FFFFFF
+    res/drawable/bg_switch_thumb.xml            selector: checked neon-yellow #FFEB3B / unchecked #BDBDBD
+    res/drawable/bg_overlay_soon_panel.xml       rounded rect, #E6000000
+    res/drawable/bg_mode_selector_capsule.xml    rounded pill, #33FFFFFF
+    res/drawable/bg_mode_tab_active.xml          rounded pill, #FFFFFFFF
+    res/drawable/bg_action_button_ready.xml      large pill, #FFFFFFFF
+    res/drawable/bg_bottom_sheet_top_rounded.xml rounded-top rect (16dp), #1C1C1C
+    res/drawable/bg_source_row_icon.xml          circle, #262626
+    res/drawable/dot_active_indicator.xml        small oval, #FFEB3B
+    res/drawable/ic_menu_dots.xml                three-dot vector, white
+    res/drawable/ic_help_outline.xml             question-mark circle vector, white
+    res/drawable/ic_plus_badge.xml               plus vector, white
+    res/drawable/ic_profile_placeholder.xml      filled circle avatar, accent color
+    res/drawable/ic_youtube_flag.xml             red rounded-rect + white play triangle
+    res/drawable/ic_gear_settings.xml            gear vector, dark on yellow
+    res/drawable/ic_close.xml                    "X" vector, white
+    res/drawable/ic_source_chat.xml               chat-bubble vector, white
+    res/drawable/ic_source_text.xml                "T" vector, white
+    res/drawable/ic_source_web.xml                 globe vector, white
+    res/drawable/ic_source_image.xml               picture-frame vector, white
+    res/drawable/ic_source_plus.xml                small plus vector, white
+-->
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/rootContainer"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#000000">
+    android:background="#121212"
+    tools:context=".MainActivity">
 
-    <android.opengl.GLSurfaceView
-        android:id="@+id/glSurfaceView"
+    <!-- ============================================================ -->
+    <!-- 2. BACKGROUND LAYER — centered 9:16 UVC camera viewport       -->
+    <!-- ============================================================ -->
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/cameraViewportContainer"
         android:layout_width="0dp"
         android:layout_height="0dp"
+        android:background="#0D1420"
         app:layout_constraintDimensionRatio="9:16"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/bottomNavRow"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+        app:layout_constraintEnd_toEndOf="parent">
 
-    <FrameLayout
-        android:id="@+id/overlayContainer"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:background="@android:color/transparent"
-        app:layout_constraintTop_toTopOf="@id/glSurfaceView"
-        app:layout_constraintBottom_toBottomOf="@id/glSurfaceView"
-        app:layout_constraintStart_toStartOf="@id/glSurfaceView"
-        app:layout_constraintEnd_toEndOf="@id/glSurfaceView">
-
-        <!--
-            Off-screen WebView used purely as a texture source.
-            visibility="invisible" keeps it measured/laid out (required
-            for View#draw(Canvas) to produce valid pixels) without the
-            framework compositing it into the normal view hierarchy.
-        -->
-        <WebView
-            android:id="@+id/pipWebView"
-            android:layout_width="480dp"
-            android:layout_height="270dp"
-            android:layout_gravity="top|start"
-            android:visibility="invisible" />
-
-        <LinearLayout
+        <TextureView
+            android:id="@+id/uvcCameraPreview"
             android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+
+        <!-- ==================================================== -->
+        <!-- 4. VIDEO OVERLAY — YouTube badge + viewer counter     -->
+        <!-- ==================================================== -->
+        <LinearLayout
+            android:id="@+id/viewerCounterWidget"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_gravity="bottom"
+            android:layout_marginTop="16dp"
+            android:layout_marginStart="16dp"
             android:orientation="horizontal"
-            android:gravity="center"
-            android:paddingStart="16dp"
-            android:paddingEnd="16dp"
-            android:paddingBottom="32dp"
-            android:background="@android:color/transparent">
+            android:gravity="center_vertical"
+            android:paddingStart="6dp"
+            android:paddingEnd="12dp"
+            android:paddingTop="4dp"
+            android:paddingBottom="4dp"
+            android:background="@drawable/bg_counter_pill"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintStart_toStartOf="parent">
 
-            <Button
-                android:id="@+id/btnGoLive"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:layout_marginEnd="8dp"
-                android:text="Go Live"
-                android:backgroundTint="#E53935"
-                android:textColor="#FFFFFF" />
+            <ImageView
+                android:id="@+id/imgYoutubeFlag"
+                android:layout_width="28dp"
+                android:layout_height="20dp"
+                android:src="@drawable/ic_youtube_flag"
+                android:contentDescription="@string/desc_platform_indicator" />
 
-            <Button
-                android:id="@+id/btnSaveReplay"
-                android:layout_width="0dp"
+            <TextView
+                android:id="@+id/tvViewerCount"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:layout_marginEnd="8dp"
-                android:text="Save Replay"
-                android:backgroundTint="#1E88E5"
-                android:textColor="#FFFFFF" />
-
-            <Button
-                android:id="@+id/btnScenes"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="Scenes"
-                android:backgroundTint="#43A047"
-                android:textColor="#FFFFFF" />
+                android:layout_marginStart="6dp"
+                android:text="0"
+                android:textColor="#FFFFFF"
+                android:textSize="14sp"
+                android:textStyle="bold" />
 
         </LinearLayout>
 
-    </FrameLayout>
+        <!-- Settings gear affordance, top-right of viewport -->
+        <ImageView
+            android:id="@+id/btnScreenSettingsGear"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:layout_marginTop="16dp"
+            android:layout_marginEnd="16dp"
+            android:padding="6dp"
+            android:background="@drawable/bg_circle_ripple"
+            android:src="@drawable/ic_gear_settings"
+            android:contentDescription="@string/desc_screen_settings"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" />
+
+        <!-- ==================================================== -->
+        <!-- 5b. Full-viewport "STREAM STARTING SOON" overlay      -->
+        <!--     shown/hidden by Screensaver toggle at runtime     -->
+        <!-- ==================================================== -->
+        <LinearLayout
+            android:id="@+id/streamStartingSoonOverlay"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:background="@drawable/bg_overlay_soon_panel"
+            android:visibility="visible"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent">
+
+            <TextView
+                android:id="@+id/tvSoonLine1"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/label_stream"
+                android:textColor="#33FFFFFF"
+                android:textSize="30sp"
+                android:textStyle="bold|italic"
+                android:letterSpacing="0.05" />
+
+            <TextView
+                android:id="@+id/tvSoonLine2"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/label_starting"
+                android:textColor="#39FF14"
+                android:textSize="34sp"
+                android:textStyle="bold|italic"
+                android:letterSpacing="0.05" />
+
+            <TextView
+                android:id="@+id/tvSoonLine3"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/label_soon"
+                android:textColor="#33FFFFFF"
+                android:textSize="30sp"
+                android:textStyle="bold|italic"
+                android:letterSpacing="0.05" />
+
+        </LinearLayout>
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <!-- ============================================================ -->
+    <!-- 3. TOP NAVIGATION BAR                                         -->
+    <!-- ============================================================ -->
+    <LinearLayout
+        android:id="@+id/topNavBar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:paddingHorizontal="12dp"
+        android:paddingVertical="8dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:background="@drawable/bg_pill_translucent_dark"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <ImageButton
+            android:id="@+id/btnMenu"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:background="@drawable/bg_circle_ripple"
+            android:src="@drawable/ic_menu_dots"
+            android:contentDescription="@string/desc_menu"
+            android:scaleType="centerInside" />
+
+        <ImageButton
+            android:id="@+id/btnHelp"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_marginStart="8dp"
+            android:background="@drawable/bg_circle_ripple"
+            android:src="@drawable/ic_help_outline"
+            android:contentDescription="@string/desc_help"
+            android:scaleType="centerInside" />
+
+        <Space
+            android:layout_width="0dp"
+            android:layout_height="1dp"
+            android:layout_weight="1" />
+
+        <TextView
+            android:id="@+id/btnPlusUpsell"
+            android:layout_width="wrap_content"
+            android:layout_height="36dp"
+            android:paddingHorizontal="16dp"
+            android:gravity="center"
+            android:text="@string/label_plus"
+            android:textColor="#101010"
+            android:textStyle="bold"
+            android:background="@drawable/bg_mode_tab_active" />
+
+        <ImageButton
+            android:id="@+id/btnProfile"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_marginStart="8dp"
+            android:background="@drawable/bg_circle_ripple"
+            android:src="@drawable/ic_profile_placeholder"
+            android:contentDescription="@string/desc_profile"
+            android:scaleType="centerInside" />
+
+    </LinearLayout>
+
+    <!-- ============================================================ -->
+    <!-- 5a. CENTER LAYOUT — Screensaver toggle                        -->
+    <!-- ============================================================ -->
+    <LinearLayout
+        android:id="@+id/screensaverToggleRow"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        app:layout_constraintTop_toBottomOf="@id/cameraViewportContainer"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginTop="12dp">
+
+        <TextView
+            android:id="@+id/tvScreensaverLabel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/label_screensaver"
+            android:textColor="#FFFFFF"
+            android:textSize="16sp" />
+
+        <androidx.appcompat.widget.SwitchCompat
+            android:id="@+id/switchScreensaver"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="12dp"
+            android:checked="true"
+            android:track="@drawable/bg_switch_track"
+            android:thumb="@drawable/bg_switch_thumb" />
+
+    </LinearLayout>
+
+    <!-- ============================================================ -->
+    <!-- 6. MODE SELECTOR — Screen / Camera / VTuber capsule           -->
+    <!-- ============================================================ -->
+    <LinearLayout
+        android:id="@+id/modeSelectorContainer"
+        android:layout_width="wrap_content"
+        android:layout_height="44dp"
+        android:orientation="horizontal"
+        android:padding="4dp"
+        android:background="@drawable/bg_mode_selector_capsule"
+        app:layout_constraintBottom_toTopOf="@id/btnGoLive"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginBottom="20dp">
+
+        <TextView
+            android:id="@+id/tabModeScreen"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:gravity="center"
+            android:paddingHorizontal="22dp"
+            android:text="@string/label_mode_screen"
+            android:textColor="#101010"
+            android:textStyle="bold"
+            android:background="@drawable/bg_mode_tab_active" />
+
+        <TextView
+            android:id="@+id/tabModeCamera"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:gravity="center"
+            android:paddingHorizontal="22dp"
+            android:text="@string/label_mode_camera"
+            android:textColor="#B3FFFFFF"
+            android:background="@android:color/transparent" />
+
+        <TextView
+            android:id="@+id/tabModeVtuber"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:gravity="center"
+            android:paddingHorizontal="22dp"
+            android:text="@string/label_mode_vtuber"
+            android:textColor="#B3FFFFFF"
+            android:background="@android:color/transparent" />
+
+    </LinearLayout>
+
+    <!-- ============================================================ -->
+    <!-- 7. ACTION TRIGGER — massive white "Ready" pill                -->
+    <!-- ============================================================ -->
+    <TextView
+        android:id="@+id/btnGoLive"
+        android:layout_width="0dp"
+        android:layout_height="64dp"
+        android:layout_marginHorizontal="24dp"
+        android:layout_marginBottom="20dp"
+        android:gravity="center"
+        android:text="@string/label_ready"
+        android:textColor="#101010"
+        android:textSize="22sp"
+        android:textStyle="bold"
+        android:background="@drawable/bg_action_button_ready"
+        app:layout_constraintBottom_toTopOf="@id/bottomNavRow"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <!-- ============================================================ -->
+    <!-- 8. BOTTOM NAVIGATION ROW                                      -->
+    <!-- ============================================================ -->
+    <LinearLayout
+        android:id="@+id/bottomNavRow"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:weightSum="4"
+        android:paddingTop="10dp"
+        android:paddingBottom="18dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <LinearLayout
+            android:id="@+id/tabConnectGroup"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:gravity="center">
+            <TextView
+                android:id="@+id/tvTabConnect"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/label_tab_connect"
+                android:textColor="#8A8A8A"
+                android:textStyle="bold"
+                android:textSize="12sp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/tabLiveGroup"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:gravity="center">
+            <TextView
+                android:id="@+id/tvTabLive"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/label_tab_live"
+                android:textColor="#FFFFFF"
+                android:textStyle="bold"
+                android:textSize="12sp" />
+            <View
+                android:id="@+id/dotActiveIndicator"
+                android:layout_width="5dp"
+                android:layout_height="5dp"
+                android:layout_marginTop="4dp"
+                android:background="@drawable/dot_active_indicator" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/tabVideoGroup"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:gravity="center">
+            <TextView
+                android:id="@+id/tvTabVideo"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/label_tab_video"
+                android:textColor="#8A8A8A"
+                android:textStyle="bold"
+                android:textSize="12sp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/tabPhotoGroup"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:gravity="center">
+            <TextView
+                android:id="@+id/tvTabPhoto"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/label_tab_photo"
+                android:textColor="#8A8A8A"
+                android:textStyle="bold"
+                android:textSize="12sp" />
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <!-- ============================================================ -->
+    <!-- 9. "ADD SOURCE" DRAWER — hidden-by-default bottom sheet       -->
+    <!-- ============================================================ -->
+    <LinearLayout
+        android:id="@+id/addSourceBottomSheet"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="@drawable/bg_bottom_sheet_top_rounded"
+        android:paddingBottom="24dp"
+        android:visibility="gone"
+        app:layout_behavior="com.google.android.material.bottomsheet.BottomSheetBehavior"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        tools:visibility="visible">
+
+        <View
+            android:layout_width="36dp"
+            android:layout_height="4dp"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="10dp"
+            android:background="#3A3A3A" />
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingHorizontal="20dp"
+            android:paddingTop="16dp"
+            android:paddingBottom="12dp">
+
+            <TextView
+                android:id="@+id/tvAddSourceTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerVertical="true"
+                android:text="@string/label_add_source"
+                android:textColor="#FFFFFF"
+                android:textSize="22sp"
+                android:textStyle="bold" />
+
+            <ImageButton
+                android:id="@+id/btnCloseAddSource"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:layout_alignParentEnd="true"
+                android:layout_centerVertical="true"
+                android:background="@drawable/bg_circle_ripple"
+                android:src="@drawable/ic_close"
+                android:contentDescription="@string/desc_close" />
+
+        </RelativeLayout>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#232323"
+            android:layout_marginBottom="4dp" />
+
+        <!-- Row: Chat -->
+        <LinearLayout
+            android:id="@+id/rowSourceChat"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingHorizontal="20dp"
+            android:paddingVertical="14dp"
+            android:background="?attr/selectableItemBackground">
+
+            <ImageView
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:padding="8dp"
+                android:background="@drawable/bg_source_row_icon"
+                android:src="@drawable/ic_source_chat"
+                android:contentDescription="@string/label_source_chat" />
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="16dp"
+                android:text="@string/label_source_chat"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp" />
+
+            <ImageButton
+                android:id="@+id/btnAddSourceChat"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:background="@drawable/bg_circle_ripple"
+                android:src="@drawable/ic_source_plus"
+                android:contentDescription="@string/desc_add" />
+
+        </LinearLayout>
+
+        <!-- Row: Text -->
+        <LinearLayout
+            android:id="@+id/rowSourceText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingHorizontal="20dp"
+            android:paddingVertical="14dp"
+            android:background="?attr/selectableItemBackground">
+
+            <ImageView
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:padding="8dp"
+                android:background="@drawable/bg_source_row_icon"
+                android:src="@drawable/ic_source_text"
+                android:contentDescription="@string/label_source_text" />
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="16dp"
+                android:text="@string/label_source_text"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp" />
+
+            <ImageButton
+                android:id="@+id/btnAddSourceText"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:background="@drawable/bg_circle_ripple"
+                android:src="@drawable/ic_source_plus"
+                android:contentDescription="@string/desc_add" />
+
+        </LinearLayout>
+
+        <!-- Row: Web -->
+        <LinearLayout
+            android:id="@+id/rowSourceWeb"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingHorizontal="20dp"
+            android:paddingVertical="14dp"
+            android:background="?attr/selectableItemBackground">
+
+            <ImageView
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:padding="8dp"
+                android:background="@drawable/bg_source_row_icon"
+                android:src="@drawable/ic_source_web"
+                android:contentDescription="@string/label_source_web" />
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="16dp"
+                android:text="@string/label_source_web"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp" />
+
+            <ImageButton
+                android:id="@+id/btnAddSourceWeb"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:background="@drawable/bg_circle_ripple"
+                android:src="@drawable/ic_source_plus"
+                android:contentDescription="@string/desc_add" />
+
+        </LinearLayout>
+
+        <!-- Row: Image -->
+        <LinearLayout
+            android:id="@+id/rowSourceImage"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingHorizontal="20dp"
+            android:paddingVertical="14dp"
+            android:background="?attr/selectableItemBackground">
+
+            <ImageView
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:padding="8dp"
+                android:background="@drawable/bg_source_row_icon"
+                android:src="@drawable/ic_source_image"
+                android:contentDescription="@string/label_source_image" />
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="16dp"
+                android:text="@string/label_source_image"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp" />
+
+            <ImageButton
+                android:id="@+id/btnAddSourceImage"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:background="@drawable/bg_circle_ripple"
+                android:src="@drawable/ic_source_plus"
+                android:contentDescription="@string/desc_add" />
+
+        </LinearLayout>
+
+    </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
