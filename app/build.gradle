@@ -9,8 +9,8 @@ android {
         applicationId "com.jiangdg.uvc"
         minSdkVersion 23    
         targetSdkVersion 34
-        versionCode 20
-        versionName "20.0"
+        versionCode 21
+        versionName "21.0" // Force bump cache line
 
         multiDexEnabled true
 
@@ -40,7 +40,7 @@ android {
     }
 }
 
-// Drops all code styling checkers completely so they can never freeze your cloud builder
+// Drops all layout styling check scripts so they never lock your cloud compiler
 tasks.whenTaskAdded { task ->
     if (task.name.contains("ktlint") || task.name.contains("lintKotlin") || task.name.contains("lint")) {
         task.enabled = false
@@ -48,28 +48,26 @@ tasks.whenTaskAdded { task ->
 }
 
 repositories {
+    // Moved JitPack to the absolute top of the index so the camera package resolves first
+    maven { url 'https://jitpack.io' }
     google()
     mavenCentral()
-    maven { url 'https://jitpack.io' }
-    maven { url 'https://huawei.com' } // Backing repository layer for missing multimedia codecs
+    maven { url 'https://huawei.com' }
 }
 
 dependencies {
     implementation fileTree(include: ["*.jar"], dir: "libs")
     
-    // Core Android platform layout paths
+    // Core Android layout paths
     implementation "androidx.appcompat:appcompat:1.6.1"
     implementation "androidx.core:core-ktx:1.12.0"
     implementation "com.google.android.material:material:1.11.0"
     implementation "androidx.constraintlayout:constraintlayout:2.1.4"
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.9.22"
-    implementation "androidx.lifecycle:lifecycle-viewmodel-ktx:2.6.2"
-    implementation "androidx.lifecycle:lifecycle-livedata-ktx:2.6.2"
-    implementation "androidx.lifecycle:lifecycle-runtime-ktx:2.6.2"
     
-    // Modernized, un-fragmented master path that contains all necessary camera dependencies internally without relying on the dead serenegiant link
+    // Self-contained camera binary framework
     implementation 'com.github.Liuguihong:AndroidUVCCamera:1.0.0'
 
-    // Clean streaming core modules indexed seamlessly by JitPack
+    // Clean streaming core modules indexed cleanly by JitPack
     implementation 'com.github.pedroSG94.RootEncoder:rtmp:2.4.8'
 }
