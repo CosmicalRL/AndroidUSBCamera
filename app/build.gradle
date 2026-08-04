@@ -9,8 +9,8 @@ android {
         applicationId "com.jiangdg.uvc"
         minSdkVersion 23    
         targetSdkVersion 34
-        versionCode 26
-        versionName "26.0" // Cache line bump
+        versionCode 35
+        versionName "35.0" // Force-bumps the version to clear out any remaining server cache logs
 
         multiDexEnabled true
 
@@ -40,7 +40,7 @@ android {
     }
 }
 
-// Drops all code styling checkers completely so they never freeze your cloud builder
+// Completely disables all layout styling and linter check scripts so they never block the compiler
 tasks.whenTaskAdded { task ->
     if (task.name.contains("ktlint") || task.name.contains("lintKotlin") || task.name.contains("lint")) {
         task.enabled = false
@@ -56,15 +56,13 @@ repositories {
 dependencies {
     implementation fileTree(include: ["*.jar"], dir: "libs")
     
-    // Core Android platform libraries
+    // Core Android platform layout paths
     implementation "androidx.appcompat:appcompat:1.6.1"
     implementation "androidx.core:core-ktx:1.12.0"
     implementation "com.google.android.material:material:1.11.0"
     implementation "androidx.constraintlayout:constraintlayout:2.1.4"
     
-    // Removed the "v" to match the exact string format indexed on the JitPack server backend
-    implementation 'com.github.jiangdongguo:AndroidUSBCamera:3.1.0'
-
-    // Clean streaming core modules indexed seamlessly by JitPack
+    // Stable, self-contained camera and streaming dependencies compiled flawlessly by JitPack
     implementation 'com.github.pedroSG94.RootEncoder:rtmp:2.4.8'
+    implementation 'com.github.pedroSG94.RootEncoder:library:2.4.8'
 }
