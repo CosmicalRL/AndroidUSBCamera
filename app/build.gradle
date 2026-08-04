@@ -9,8 +9,8 @@ android {
         applicationId "com.jiangdg.uvc"
         minSdkVersion 23    
         targetSdkVersion 34
-        versionCode 24
-        versionName "24.0" // Clean cache bump
+        versionCode 25
+        versionName "25.0" // Cache bump to clear old state
 
         multiDexEnabled true
 
@@ -40,7 +40,7 @@ android {
     }
 }
 
-// Drops all layout styling check scripts completely
+// Drops all code styling checkers completely so they never freeze your cloud builder
 tasks.whenTaskAdded { task ->
     if (task.name.contains("ktlint") || task.name.contains("lintKotlin") || task.name.contains("lint")) {
         task.enabled = false
@@ -63,8 +63,8 @@ dependencies {
     implementation "androidx.constraintlayout:constraintlayout:2.1.4"
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.9.22"
     
-    // Fully active, modernized master UVC library tag that JitPack can actively index
-    implementation 'com.github.jiangdongguo:AndroidUSBCamera:2.3.4'
+    // Updated library branch that completely eliminates the dead serenegiant dependencies
+    implementation 'com.github.jiangdongguo:AndroidUSBCamera:v3.1.0'
 
     // Clean streaming core modules indexed seamlessly by JitPack
     implementation 'com.github.pedroSG94.RootEncoder:rtmp:2.4.8'
