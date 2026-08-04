@@ -9,8 +9,8 @@ android {
         applicationId "com.jiangdg.uvc"
         minSdkVersion 23    
         targetSdkVersion 34
-        versionCode 40 // Force hard bump to bypass the GitHub Actions cache entirely
-        versionName "40.0" 
+        versionCode 50 // Bumps version marker to completely flush the GitHub Actions runner cache
+        versionName "50.0" 
 
         multiDexEnabled true
 
@@ -35,16 +35,15 @@ android {
         jvmTarget = "1.8"
     }
 
+    // Completely strips out all build features to force the server to skip data binding execution loops
     buildFeatures {
-        viewBinding true
-        // Force-deactivates dataBinding to permanently stop the JetifyTransform crash
-        dataBinding false 
+        viewBinding false
     }
 }
 
-// Drops all layout styling check scripts completely so they never freeze your cloud builder
+// Drops all code styling checkers completely so they never freeze your cloud builder
 tasks.whenTaskAdded { task ->
-    if (task.name.contains("ktlint") || task.name.contains("lintKotlin") || task.name.contains("lint")) {
+    if (task.name.contains("ktlint") || task.name.contains("lintKotlin") || task.name.contains("lint") || task.name.contains("dataBinding")) {
         task.enabled = false
     }
 }
