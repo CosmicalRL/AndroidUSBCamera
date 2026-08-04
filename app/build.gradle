@@ -9,8 +9,8 @@ android {
         applicationId "com.jiangdg.uvc"
         minSdkVersion 23    
         targetSdkVersion 34
-        versionCode 21
-        versionName "21.0" // Force bump cache line
+        versionCode 22
+        versionName "22.0" // Clean cache bump
 
         multiDexEnabled true
 
@@ -40,7 +40,7 @@ android {
     }
 }
 
-// Drops all layout styling check scripts so they never lock your cloud compiler
+// Drops all layout styling check scripts completely
 tasks.whenTaskAdded { task ->
     if (task.name.contains("ktlint") || task.name.contains("lintKotlin") || task.name.contains("lint")) {
         task.enabled = false
@@ -48,26 +48,25 @@ tasks.whenTaskAdded { task ->
 }
 
 repositories {
-    // Moved JitPack to the absolute top of the index so the camera package resolves first
-    maven { url 'https://jitpack.io' }
     google()
     mavenCentral()
-    maven { url 'https://huawei.com' }
+    maven { url 'https://jitpack.io' }
+    // Completely removed the broken huawei repository to stop the TLS handshake failures
 }
 
 dependencies {
     implementation fileTree(include: ["*.jar"], dir: "libs")
     
-    // Core Android layout paths
+    // Core Android platform libraries
     implementation "androidx.appcompat:appcompat:1.6.1"
     implementation "androidx.core:core-ktx:1.12.0"
     implementation "com.google.android.material:material:1.11.0"
     implementation "androidx.constraintlayout:constraintlayout:2.1.4"
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.9.22"
     
-    // Self-contained camera binary framework
+    // Self-contained camera binary framework from JitPack
     implementation 'com.github.Liuguihong:AndroidUVCCamera:1.0.0'
 
-    // Clean streaming core modules indexed cleanly by JitPack
+    // Clean streaming core modules indexed seamlessly by JitPack
     implementation 'com.github.pedroSG94.RootEncoder:rtmp:2.4.8'
 }
