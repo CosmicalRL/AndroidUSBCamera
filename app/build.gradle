@@ -9,8 +9,8 @@ android {
         applicationId "com.jiangdg.uvc"
         minSdkVersion 23    
         targetSdkVersion 34
-        versionCode 70 // Fresh cache bump to drop old errors
-        versionName "70.0" 
+        versionCode 80 // Clean cache bump to trigger a fresh compile tracking line
+        versionName "80.0" 
 
         multiDexEnabled true
 
@@ -36,7 +36,6 @@ android {
     }
 }
 
-// Bypasses the broken Jetifier transformations by forcing a stable layout fallback version
 configurations.all {
     resolutionStrategy {
         force 'androidx.activity:activity:1.6.1'
@@ -65,32 +64,6 @@ dependencies {
     implementation "androidx.constraintlayout:constraintlayout:2.1.4"
     
     // Stable streaming core engines
-    implementation 'com.github.pedroSG94.RootEncoder:rtmp:2.4.8'
-    implementation 'com.github.pedroSG94.RootEncoder:library:2.4.8'
-}
-}
-
-// Drops all layout styling check scripts completely so they never freeze your cloud builder
-tasks.whenTaskAdded { task ->
-    if (task.name.contains("ktlint") || task.name.contains("lintKotlin") || task.name.contains("lint") || task.name.contains("libausbc")) {
-        task.enabled = false
-    }
-}
-
-repositories {
-    google()
-    mavenCentral()
-    maven { url 'https://jitpack.io' }
-}
-
-dependencies {
-    // Pure, independent platform dependencies only
-    implementation "androidx.appcompat:appcompat:1.6.1"
-    implementation "androidx.core:core-ktx:1.12.0"
-    implementation "com.google.android.material:material:1.11.0"
-    implementation "androidx.constraintlayout:constraintlayout:2.1.4"
-    
-    // Core stable streaming client engine that runs independently in the cloud
     implementation 'com.github.pedroSG94.RootEncoder:rtmp:2.4.8'
     implementation 'com.github.pedroSG94.RootEncoder:library:2.4.8'
 }
