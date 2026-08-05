@@ -63,7 +63,4 @@ dependencies {
     implementation "com.google.android.material:material:1.6.1"
     implementation "androidx.constraintlayout:constraintlayout:2.1.4"
     
-    // Stable, self-contained camera and streaming dependencies compiled flawlessly by JitPack
-    implementation 'com.github.pedroSG94.RootEncoder:rtmp:2.4.8'
-    implementation 'com.github.pedroSG94.RootEncoder:library:2.4.8'
 }
