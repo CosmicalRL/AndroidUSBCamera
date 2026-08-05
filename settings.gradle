@@ -1,2 +1,3 @@
 rootProject.name = "AndroidUSBCamera"
 include ':app'
+include ':libausbc'

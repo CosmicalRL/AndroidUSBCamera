@@ -1,5 +1,5 @@
-// app/src/main/java/com/jiangdongguo/usbcamera/render/StreamCanvasRenderer.java
-package com.jiangdongguo.usbcamera.render;
+// app/src/main/java/com/jiangdg/uvc/StreamCanvasRenderer.java
+package com.jiangdg.uvc;
 
 import android.content.Context;
 import android.graphics.Bitmap;
