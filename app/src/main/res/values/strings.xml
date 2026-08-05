@@ -3,4 +3,33 @@
     <string name="permission_tip" translatable="false">You have already denied permission access. Go to the Settings page to turn on permissions</string>
     <string name="dialog_contact_title" translatable="false">Contact me:</string>
     <string name="dialog_contact_message" translatable="false">765067602@qq.com\n\n❤ version: %s</string>
+
+    <!-- UI labels -->
+    <string name="label_stream" translatable="false">Go Live</string>
+    <string name="label_ready" translatable="false">Ready</string>
+    <string name="label_starting" translatable="false">Starting…</string>
+    <string name="label_soon" translatable="false">Soon</string>
+    <string name="label_screensaver" translatable="false">Screensaver</string>
+    <string name="label_plus" translatable="false">+</string>
+    <string name="label_add_source" translatable="false">Add Source</string>
+    <string name="label_mode_camera" translatable="false">Camera</string>
+    <string name="label_mode_screen" translatable="false">Screen</string>
+    <string name="label_mode_vtuber" translatable="false">VTuber</string>
+    <string name="label_tab_live" translatable="false">Live</string>
+    <string name="label_tab_video" translatable="false">Video</string>
+    <string name="label_tab_photo" translatable="false">Photo</string>
+    <string name="label_tab_connect" translatable="false">Connect</string>
+    <string name="label_source_chat" translatable="false">Chat Overlay</string>
+    <string name="label_source_text" translatable="false">Text</string>
+    <string name="label_source_web" translatable="false">Browser Source</string>
+    <string name="label_source_image" translatable="false">Image</string>
+
+    <!-- Content descriptions -->
+    <string name="desc_platform_indicator" translatable="false">Platform indicator</string>
+    <string name="desc_screen_settings" translatable="false">Screen settings</string>
+    <string name="desc_menu" translatable="false">More options</string>
+    <string name="desc_help" translatable="false">Help</string>
+    <string name="desc_profile" translatable="false">Profile</string>
+    <string name="desc_close" translatable="false">Close</string>
+    <string name="desc_add" translatable="false">Add</string>
 </resources>
