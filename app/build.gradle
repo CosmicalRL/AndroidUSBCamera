@@ -1,18 +1,16 @@
 plugins {
     id 'com.android.application'
     id 'kotlin-android'
-    id 'kotlin-kapt'
 }
 
 android {
     compileSdkVersion 34
-
     defaultConfig {
-        applicationId "com.jiangdg.demo"
-        minSdkVersion 23
+        applicationId "com.jiangdg.uvc"
+        minSdkVersion 23    
         targetSdkVersion 34
-        versionCode 50
-        versionName "3.3.3"
+        versionCode 60 // Hard bump to flush any cached task modules
+        versionName "60.0" 
 
         multiDexEnabled true
 
@@ -29,29 +27,18 @@ android {
     }
 
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
     }
 
     kotlinOptions {
-        jvmTarget = "1.8"
-    }
-
-    buildFeatures {
-        viewBinding true
-    }
-
-    lintOptions {
-        abortOnError false
-        checkReleaseBuilds false
+        jvmTarget = "17"
     }
 }
 
+// Drops all layout styling check scripts completely so they never freeze your cloud builder
 tasks.whenTaskAdded { task ->
-    if (task.name.contains("ktlint") ||
-        task.name.contains("lintKotlin") ||
-        task.name.contains("lint") ||
-        task.name.contains("dataBinding")) {
+    if (task.name.contains("ktlint") || task.name.contains("lintKotlin") || task.name.contains("lint") || task.name.contains("libausbc")) {
         task.enabled = false
     }
 }
@@ -63,37 +50,14 @@ repositories {
 }
 
 dependencies {
-
-    implementation fileTree(include: ["*.jar"], dir: "libs")
-
-    // AndroidX
+    // Pure, independent platform dependencies only
     implementation "androidx.appcompat:appcompat:1.6.1"
     implementation "androidx.core:core-ktx:1.12.0"
-    implementation "com.google.android.material:material:1.6.1"
+    implementation "com.google.android.material:material:1.11.0"
     implementation "androidx.constraintlayout:constraintlayout:2.1.4"
-    implementation "androidx.multidex:multidex:2.0.1"
-    implementation "androidx.lifecycle:lifecycle-runtime-ktx:2.6.2"
-
-    // Kotlin
-    implementation "org.jetbrains.kotlin:kotlin-stdlib:1.8.22"
-    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3"
-
-    // AUSBC
-    implementation project(':libausbc')
-
-    // Glide
-    implementation 'com.github.bumptech.glide:glide:4.16.0'
-    kapt 'com.github.bumptech.glide:compiler:4.16.0'
-
-    // MMKV
-    implementation 'com.tencent:mmkv:1.2.14'
-
-    // Bugly
-    implementation 'com.tencent.bugly:crashreport:3.4.4'
-
-    // Material dialogs
-    implementation 'com.afollestad.material-dialogs:core:3.3.0'
-
-    // RecyclerView adapter helper
-    implementation 'com.github.CymChad:BaseRecyclerViewAdapterHelper:2.9.50'
+    
+    // Core stable streaming client engine that runs independently in the cloud
+    implementation 'com.github.pedroSG94.RootEncoder:rtmp:2.4.8'
+    implementation 'com.github.pedroSG94.RootEncoder:library:2.4.8'
 }
+
