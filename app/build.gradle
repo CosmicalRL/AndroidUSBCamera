@@ -1,6 +1,5 @@
 plugins {
     id 'com.android.application'
-    id 'kotlin-android'
 }
 
 android {
@@ -9,8 +8,8 @@ android {
         applicationId "com.jiangdg.uvc"
         minSdkVersion 23    
         targetSdkVersion 34
-        versionCode 100 // Cache flush bump
-        versionName "100.0" 
+        versionCode 110 // Cache bump to force a brand new build tracking line
+        versionName "110.0" 
 
         multiDexEnabled true
 
@@ -27,22 +26,15 @@ android {
     }
 
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_17
-        targetCompatibility JavaVersion.VERSION_17
-    }
-
-    kotlinOptions {
-        jvmTarget = "17"
-        // Force the Kotlin compiler to suppress errors regarding missing legacy code dependencies
-        freeCompilerArgs += ["-Xsuppress-version-warnings", "-nowarn"]
+        sourceCompatibility JavaVersion.VERSION_11
+        targetCompatibility JavaVersion.VERSION_11
     }
 }
 
-gradle.taskGraph.whenReady { taskGraph ->
-    taskGraph.allTasks.each { task ->
-        if (task.project.name == 'libausbc' || task.name.contains('libausbc')) {
-            task.enabled = false
-        }
+// FORCE DISABLING KOTLIN COMPILER COMPONENT
+tasks.configureEach { task ->
+    if (task.name.contains("Kotlin") || task.name.contains("kotlin") || task.name.contains("Kapt")) {
+        task.enabled = false
     }
 }
 
@@ -56,11 +48,10 @@ dependencies {
     implementation fileTree(include: ["*.jar"], dir: "libs")
     
     implementation "androidx.appcompat:appcompat:1.6.1"
-    implementation "androidx.core:core-ktx:1.12.0"
     implementation "com.google.android.material:material:1.11.0"
     implementation "androidx.constraintlayout:constraintlayout:2.1.4"
     
-    // Stable standalone core streaming engines
+    // Core hardware streaming clients
     implementation 'com.github.pedroSG94.RootEncoder:rtmp:2.4.8'
     implementation 'com.github.pedroSG94.RootEncoder:library:2.4.8'
 }
