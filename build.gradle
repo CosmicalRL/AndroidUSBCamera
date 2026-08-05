@@ -15,8 +15,13 @@ buildscript {
 allprojects {
     repositories {
         google()
+        mavenCentral()
         jcenter()
         maven { url "https://jitpack.io" }
+        // Expose pre-compiled native AARs to all subprojects (needed for transitive resolution)
+        flatDir {
+            dirs "$rootDir/libnative/aar", "$rootDir/libuvc/aar"
+        }
     }
 }
 
