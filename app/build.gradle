@@ -6,6 +6,7 @@ plugins {
 
 android {
     compileSdkVersion 34
+
     defaultConfig {
         applicationId "com.jiangdg.demo"
         minSdkVersion 23
@@ -47,7 +48,10 @@ android {
 }
 
 tasks.whenTaskAdded { task ->
-    if (task.name.contains("ktlint") || task.name.contains("lintKotlin") || task.name.contains("lint") || task.name.contains("dataBinding")) {
+    if (task.name.contains("ktlint") ||
+        task.name.contains("lintKotlin") ||
+        task.name.contains("lint") ||
+        task.name.contains("dataBinding")) {
         task.enabled = false
     }
 }
@@ -78,7 +82,7 @@ dependencies {
     implementation "androidx.lifecycle:lifecycle-runtime-ktx:2.6.2"
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.5.2"
 
-    // AUSBC camera library (local module — includes pre-compiled libnative + libuvc AARs)
+    // AUSBC camera library
     implementation project(':libausbc')
 
     // Image loading
@@ -86,15 +90,14 @@ dependencies {
     kapt 'com.github.bumptech.glide:compiler:4.16.0'
 
     // MMKV key-value storage
-    implementation 'com.tencent.mmkv:mmkv:1.2.14'
+    implementation 'com.tencent:mmkv:1.2.14'
 
     // Bugly crash reporting
     implementation 'com.tencent.bugly:crashreport:3.4.4'
 
     // Material Dialogs
     implementation 'com.afollestad.material-dialogs:core:3.3.0'
-    implementation 'com.afollestad.material-dialogs:list:3.3.0'
 
-    // RecyclerView adapter helper (v2.x API)
+    // RecyclerView adapter helper
     implementation 'com.github.CymChad:BaseRecyclerViewAdapterHelper:2.9.50'
 }
