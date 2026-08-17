@@ -6,10 +6,10 @@ android {
     compileSdkVersion 34
     defaultConfig {
         applicationId "com.jiangdg.uvc"
-        minSdkVersion 23    
+        minSdkVersion 23
         targetSdkVersion 34
-        versionCode 110 // Cache bump to force a brand new build tracking line
-        versionName "110.0" 
+        versionCode 111
+        versionName "111.0"
 
         multiDexEnabled true
 
@@ -31,13 +31,6 @@ android {
     }
 }
 
-// FORCE DISABLING KOTLIN COMPILER COMPONENT
-tasks.configureEach { task ->
-    if (task.name.contains("Kotlin") || task.name.contains("kotlin") || task.name.contains("Kapt")) {
-        task.enabled = false
-    }
-}
-
 repositories {
     google()
     mavenCentral()
@@ -46,12 +39,7 @@ repositories {
 
 dependencies {
     implementation fileTree(include: ["*.jar"], dir: "libs")
-    
     implementation "androidx.appcompat:appcompat:1.6.1"
     implementation "com.google.android.material:material:1.11.0"
     implementation "androidx.constraintlayout:constraintlayout:2.1.4"
-    
-    // Core hardware streaming clients
-    implementation 'com.github.pedroSG94.RootEncoder:rtmp:2.4.8'
-    implementation 'com.github.pedroSG94.RootEncoder:library:2.4.8'
 }
