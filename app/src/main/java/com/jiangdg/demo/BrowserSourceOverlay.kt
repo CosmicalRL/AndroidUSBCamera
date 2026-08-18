@@ -157,12 +157,14 @@ class BrowserSourceOverlay(context: Context) : FrameLayout(context) {
         AlertDialog.Builder(context)
             .setTitle("Browser source URL")
             .setView(input)
-            .setNegativeButton("Cancel", null)
+            .setNegativeButton("Cancel") { _, _ -> (parent as? ViewGroup)?.removeView(this) }
             .setPositiveButton("Load") { _, _ ->
                 var url = input.text.toString().trim()
                 if (url.isNotEmpty()) {
                     if (!url.startsWith("http://") && !url.startsWith("https://")) url = "https://$url"
                     webView.loadUrl(url)
+                } else {
+                    (parent as? ViewGroup)?.removeView(this)
                 }
             }
             .show()
