@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#FF0D0E10">
@@ -76,31 +77,11 @@
             android:textColor="#FFFFFFFF"
             android:textSize="11sp"
             android:textStyle="bold" />
-        <ImageView
-            android:id="@+id/effects_btn"
-            style="@style/Camera2TopButtonStyle"
-            android:src="@mipmap/camera_toolbar_filter"
-            android:contentDescription="Effects" />
-        <ImageView
-            android:id="@+id/cameraTypeBtn"
-            style="@style/Camera2TopButtonStyle"
-            android:src="@mipmap/camera_toolbar_type"
-            android:contentDescription="Camera type" />
-        <ImageView
-            android:id="@+id/voiceBtn"
-            style="@style/Camera2TopButtonStyle"
-            android:src="@mipmap/camera_voice_off"
-            android:contentDescription="Microphone" />
-        <ImageView
-            android:id="@+id/settingsBtn"
-            style="@style/Camera2TopButtonStyle"
-            android:src="@mipmap/camera_toolbar_more"
-            android:contentDescription="Settings" />
-        <ImageView
-            android:id="@+id/resolutionBtn"
-            style="@style/Camera2TopButtonStyle"
-            android:src="@mipmap/camera_resolution"
-            android:contentDescription="Resolution" />
+        <ImageView android:id="@+id/effects_btn" style="@style/Camera2TopButtonStyle" android:src="@mipmap/camera_toolbar_filter" android:contentDescription="Effects" />
+        <ImageView android:id="@+id/cameraTypeBtn" style="@style/Camera2TopButtonStyle" android:src="@mipmap/camera_toolbar_type" android:contentDescription="Camera type" />
+        <ImageView android:id="@+id/voiceBtn" style="@style/Camera2TopButtonStyle" android:src="@mipmap/camera_voice_off" android:contentDescription="Microphone" />
+        <ImageView android:id="@+id/settingsBtn" style="@style/Camera2TopButtonStyle" android:src="@mipmap/camera_toolbar_more" android:contentDescription="Settings" />
+        <ImageView android:id="@+id/resolutionBtn" style="@style/Camera2TopButtonStyle" android:src="@mipmap/camera_resolution" android:contentDescription="Resolution" />
     </LinearLayout>
 
     <TextView
@@ -129,160 +110,28 @@
         android:paddingEnd="8dp"
         android:paddingBottom="8dp"
         android:background="#FF111216">
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="48dp"
-            android:orientation="horizontal">
-            <TextView
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_weight="1"
-                android:background="@drawable/studio_panel_bg"
-                android:gravity="center_vertical"
-                android:paddingStart="12dp"
-                android:text="SCENE 1\nMain Camera"
-                android:textColor="#FFFFFFFF"
-                android:textSize="11sp" />
-            <TextView
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_marginStart="6dp"
-                android:layout_weight="1"
-                android:background="@drawable/studio_panel_bg"
-                android:gravity="center_vertical"
-                android:paddingStart="12dp"
-                android:text="SOURCES\nCamera • Web"
-                android:textColor="#FFFFFFFF"
-                android:textSize="11sp" />
-            <TextView
-                android:layout_width="44dp"
-                android:layout_height="match_parent"
-                android:layout_marginStart="6dp"
-                android:background="@drawable/studio_chip_bg"
-                android:gravity="center"
-                android:text="+"
-                android:textColor="#FFFFFFFF"
-                android:textSize="22sp" />
+        <LinearLayout android:layout_width="match_parent" android:layout_height="48dp" android:orientation="horizontal">
+            <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:background="@drawable/studio_panel_bg" android:gravity="center_vertical" android:paddingStart="12dp" android:text="SCENE 1\nMain Camera" android:textColor="#FFFFFFFF" android:textSize="11sp" />
+            <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_marginStart="6dp" android:layout_weight="1" android:background="@drawable/studio_panel_bg" android:gravity="center_vertical" android:paddingStart="12dp" android:text="SOURCES\nCamera • Web" android:textColor="#FFFFFFFF" android:textSize="11sp" />
+            <TextView android:layout_width="44dp" android:layout_height="match_parent" android:layout_marginStart="6dp" android:background="@drawable/studio_chip_bg" android:gravity="center" android:text="+" android:textColor="#FFFFFFFF" android:textSize="22sp" />
         </LinearLayout>
-
-        <androidx.constraintlayout.widget.ConstraintLayout
-            android:id="@+id/modeSwitchLayout"
-            android:layout_width="wrap_content"
-            android:layout_height="30dp"
-            android:layout_gravity="center_horizontal"
-            android:layout_marginTop="5dp">
-            <TextView
-                android:id="@+id/takePictureModeTv"
-                android:layout_width="wrap_content"
-                android:layout_height="match_parent"
-                android:gravity="center"
-                android:paddingStart="10dp"
-                android:paddingEnd="10dp"
-                android:text="PHOTO"
-                android:textColor="#FF8E9198"
-                android:textSize="11sp"
-                android:textStyle="bold"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent" />
-            <TextView
-                android:id="@+id/recordVideoModeTv"
-                android:layout_width="wrap_content"
-                android:layout_height="match_parent"
-                android:gravity="center"
-                android:paddingStart="10dp"
-                android:paddingEnd="10dp"
-                android:text="VIDEO"
-                android:textColor="#FFFFFFFF"
-                android:textSize="11sp"
-                android:textStyle="bold"
-                app:layout_constraintStart_toEndOf="@id/takePictureModeTv"
-                app:layout_constraintTop_toTopOf="parent" />
-            <TextView
-                android:id="@+id/recordAudioModeTv"
-                android:layout_width="wrap_content"
-                android:layout_height="match_parent"
-                android:gravity="center"
-                android:paddingStart="10dp"
-                android:paddingEnd="10dp"
-                android:text="AUDIO"
-                android:textColor="#FF8E9198"
-                android:textSize="11sp"
-                android:textStyle="bold"
-                app:layout_constraintStart_toEndOf="@id/recordVideoModeTv"
-                app:layout_constraintTop_toTopOf="parent" />
+        <androidx.constraintlayout.widget.ConstraintLayout android:id="@+id/modeSwitchLayout" android:layout_width="wrap_content" android:layout_height="30dp" android:layout_gravity="center_horizontal" android:layout_marginTop="5dp">
+            <TextView android:id="@+id/takePictureModeTv" android:layout_width="wrap_content" android:layout_height="match_parent" android:gravity="center" android:paddingStart="10dp" android:paddingEnd="10dp" android:text="PHOTO" android:textColor="#FF8E9198" android:textSize="11sp" android:textStyle="bold" app:layout_constraintStart_toStartOf="parent" app:layout_constraintTop_toTopOf="parent" />
+            <TextView android:id="@+id/recordVideoModeTv" android:layout_width="wrap_content" android:layout_height="match_parent" android:gravity="center" android:paddingStart="10dp" android:paddingEnd="10dp" android:text="VIDEO" android:textColor="#FFFFFFFF" android:textSize="11sp" android:textStyle="bold" app:layout_constraintStart_toEndOf="@id/takePictureModeTv" app:layout_constraintTop_toTopOf="parent" />
+            <TextView android:id="@+id/recordAudioModeTv" android:layout_width="wrap_content" android:layout_height="match_parent" android:gravity="center" android:paddingStart="10dp" android:paddingEnd="10dp" android:text="AUDIO" android:textColor="#FF8E9198" android:textSize="11sp" android:textStyle="bold" app:layout_constraintStart_toEndOf="@id/recordVideoModeTv" app:layout_constraintTop_toTopOf="parent" />
         </androidx.constraintlayout.widget.ConstraintLayout>
-
-        <FrameLayout
-            android:layout_width="match_parent"
-            android:layout_height="82dp">
-            <com.jiangdg.ausbc.widget.PreviewImageView
-                android:id="@+id/albumPreviewIv"
-                android:layout_width="46dp"
-                android:layout_height="46dp"
-                android:layout_gravity="center_vertical|start"
-                android:scaleType="centerCrop"
-                android:src="@mipmap/camera_album_white" />
-            <com.jiangdg.ausbc.widget.CaptureMediaView
-                android:id="@+id/captureBtn"
-                android:layout_width="68dp"
-                android:layout_height="68dp"
-                android:layout_gravity="center" />
-            <ImageView
-                android:id="@+id/lensFacingBtn1"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
-                android:layout_gravity="center_vertical|end"
-                android:scaleType="centerCrop"
-                android:src="@mipmap/camera_switch"
-                android:contentDescription="Camera" />
+        <FrameLayout android:layout_width="match_parent" android:layout_height="82dp">
+            <com.jiangdg.ausbc.widget.PreviewImageView android:id="@+id/albumPreviewIv" android:layout_width="46dp" android:layout_height="46dp" android:layout_gravity="center_vertical|start" android:scaleType="centerCrop" android:src="@mipmap/camera_album_white" />
+            <com.jiangdg.ausbc.widget.CaptureMediaView android:id="@+id/captureBtn" android:layout_width="68dp" android:layout_height="68dp" android:layout_gravity="center" />
+            <ImageView android:id="@+id/lensFacingBtn1" android:layout_width="48dp" android:layout_height="48dp" android:layout_gravity="center_vertical|end" android:scaleType="centerCrop" android:src="@mipmap/camera_switch" android:contentDescription="Camera" />
         </FrameLayout>
     </LinearLayout>
 
-    <SeekBar
-        android:id="@+id/brightnessSb"
-        android:layout_width="160dp"
-        android:layout_height="24dp"
-        android:layout_gravity="bottom|start"
-        android:layout_marginStart="74dp"
-        android:layout_marginBottom="36dp"
-        android:visibility="gone" />
-
-    <androidx.constraintlayout.widget.ConstraintLayout
-        android:id="@+id/recTimerLayout"
-        android:layout_width="wrap_content"
-        android:layout_height="36dp"
-        android:layout_gravity="top|center_horizontal"
-        android:layout_marginTop="66dp"
-        android:visibility="gone"
-        android:background="@drawable/studio_chip_bg"
-        android:paddingStart="10dp"
-        android:paddingEnd="10dp">
-        <ImageView
-            android:id="@+id/recStateIv"
-            android:layout_width="10dp"
-            android:layout_height="10dp"
-            android:layout_marginEnd="6dp"
-            android:src="@drawable/camera_rec_red_point"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
-        <TextView
-            android:id="@+id/recTimeTv"
-            android:layout_width="wrap_content"
-            android:layout_height="match_parent"
-            android:gravity="center"
-            android:text="00:00"
-            android:textColor="#FFFFFFFF"
-            android:textSize="14sp"
-            android:textStyle="bold"
-            app:layout_constraintStart_toEndOf="@id/recStateIv"
-            app:layout_constraintTop_toTopOf="parent" />
+    <SeekBar android:id="@+id/brightnessSb" android:layout_width="160dp" android:layout_height="24dp" android:layout_gravity="bottom|start" android:layout_marginStart="74dp" android:layout_marginBottom="36dp" android:visibility="gone" />
+    <androidx.constraintlayout.widget.ConstraintLayout android:id="@+id/recTimerLayout" android:layout_width="wrap_content" android:layout_height="36dp" android:layout_gravity="top|center_horizontal" android:layout_marginTop="66dp" android:visibility="gone" android:background="@drawable/studio_chip_bg" android:paddingStart="10dp" android:paddingEnd="10dp">
+        <ImageView android:id="@+id/recStateIv" android:layout_width="10dp" android:layout_height="10dp" android:layout_marginEnd="6dp" android:src="@drawable/camera_rec_red_point" app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintStart_toStartOf="parent" app:layout_constraintTop_toTopOf="parent" />
+        <TextView android:id="@+id/recTimeTv" android:layout_width="wrap_content" android:layout_height="match_parent" android:gravity="center" android:text="00:00" android:textColor="#FFFFFFFF" android:textSize="14sp" android:textStyle="bold" app:layout_constraintStart_toEndOf="@id/recStateIv" app:layout_constraintTop_toTopOf="parent" />
     </androidx.constraintlayout.widget.ConstraintLayout>
 
-    <ViewStub
-        android:id="@+id/takePictureTipViewStub"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:layout="@layout/layout_tip_view" />
+    <ViewStub android:id="@+id/takePictureTipViewStub" android:layout_width="0dp" android:layout_height="0dp" android:layout="@layout/layout_tip_view" />
 </FrameLayout>
