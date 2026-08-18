@@ -7,9 +7,9 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.view.Gravity;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.FrameLayout;
-import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.SeekBar;
 import android.widget.TextView;
@@ -17,39 +17,48 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.jiangdg.ausbc.callback.ICaptureCallBack;
+import com.jiangdg.ausbc.encode.H264EncodeProcessor;
+
 import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
 
-/**
- * Main capture-card control surface.
- *
- * libausbc owns the low-level USB/UVC handshake and camera lifecycle through
- * ReplayCameraFragment. The fragment exposes the encoded H.264 stream, which
- * ReplayBufferManager keeps in RAM for instant replay exports.
- */
+/** Lightweight OBS/PRISM-style UVC recording and instant-replay studio. */
 public class MainActivity extends AppCompatActivity {
-    private static final int MIN_BITRATE_KBPS = 1000;
-    private static final int MAX_BITRATE_KBPS = 12000;
+    private static final int MIN_BITRATE_KBPS = 2000;
+    private static final int MAX_BITRATE_KBPS = 20000;
+
+    private static final Quality[] QUALITIES = {
+            new Quality("720p60", 1280, 720, 60, 8000),
+            new Quality("1080p50", 1920, 1080, 50, 12000),
+            new Quality("720p30", 1280, 720, 30, 5000)
+    };
 
     private ReplayCameraFragment cameraFragment;
     private ReplayBufferManager replayBuffer;
-    private TextView bitrateValue;
-    private TextView clipButton;
     private TextView statusText;
-
+    private TextView qualityText;
+    private TextView replayText;
+    private Button recordButton;
+    private int qualityIndex = 0;
     private int bitrateKbps = 8000;
-    private long recordingStartedMs = 0L;
+    private boolean recording;
+
+    private static final class Quality {
+        final String name; final int width; final int height; final int fps; final int bitrate;
+        Quality(String name, int width, int height, int fps, int bitrate) {
+            this.name = name; this.width = width; this.height = height; this.fps = fps; this.bitrate = bitrate;
+        }
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_demo);
 
-        FrameLayout root = findViewById(R.id.fragment_container);
-        root.setBackgroundColor(Color.BLACK);
-
+        H264EncodeProcessor.configureDefaults(60, 8_000_000);
         replayBuffer = new ReplayBufferManager();
         replayBuffer.setBufferSeconds(30);
 
@@ -59,142 +68,89 @@ public class MainActivity extends AppCompatActivity {
                 .replace(R.id.fragment_container, cameraFragment)
                 .commit();
 
-        root.post(() -> buildControlOverlay(root));
+        FrameLayout root = findViewById(R.id.fragment_container);
+        root.post(() -> buildStudioOverlay(root));
     }
 
-    private void buildControlOverlay(FrameLayout root) {
-        FrameLayout topPill = new FrameLayout(this);
-        topPill.setBackground(roundDrawable(0xCC000000, 0xFFFFFFFF, 1, 28));
-        FrameLayout.LayoutParams pillParams = new FrameLayout.LayoutParams(
-                dp(58), dp(230), Gravity.TOP | Gravity.RIGHT);
-        pillParams.setMargins(0, dp(18), dp(12), 0);
-        root.addView(topPill, pillParams);
+    private void buildStudioOverlay(FrameLayout root) {
+        hideLegacyControls(root);
 
-        String[] icons = {"+", "☷", "🎛", "⚙"};
-        for (int i = 0; i < icons.length; i++) {
-            TextView action = new TextView(this);
-            action.setText(icons[i]);
-            action.setTextColor(Color.WHITE);
-            action.setTextSize(i == 3 ? 22 : 24);
-            action.setGravity(Gravity.CENTER);
-            action.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
-            FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(
-                    dp(54), dp(54), Gravity.TOP | Gravity.CENTER_HORIZONTAL);
-            lp.topMargin = dp(4 + i * 56);
-            topPill.addView(action, lp);
-            final int index = i;
-            action.setOnClickListener(v -> handleTopAction(index));
-        }
+        LinearLayout top = new LinearLayout(this);
+        top.setGravity(Gravity.CENTER_VERTICAL);
+        top.setPadding(dp(12), dp(6), dp(8), dp(6));
+        top.setBackgroundColor(0xE6101115);
+        FrameLayout.LayoutParams topLp = new FrameLayout.LayoutParams(-1, dp(54), Gravity.TOP);
+        root.addView(top, topLp);
+
+        TextView title = label("UVC STUDIO", 13, true);
+        top.addView(title, new LinearLayout.LayoutParams(0, -1, 1f));
+        qualityText = chip("720p60");
+        top.addView(qualityText, new LinearLayout.LayoutParams(-2, dp(34)));
+        TextView settings = chip("⚙");
+        settings.setOnClickListener(v -> showSettings());
+        top.addView(settings, new LinearLayout.LayoutParams(dp(48), dp(34)));
+
+        statusText = label("● READY • REPLAY BUFFER 30S", 11, true);
+        statusText.setPadding(dp(12), 0, dp(12), 0);
+        statusText.setGravity(Gravity.CENTER_VERTICAL);
+        FrameLayout.LayoutParams statusLp = new FrameLayout.LayoutParams(-2, dp(34), Gravity.TOP | Gravity.START);
+        statusLp.topMargin = dp(64);
+        root.addView(statusText, statusLp);
 
         LinearLayout bottom = new LinearLayout(this);
         bottom.setOrientation(LinearLayout.VERTICAL);
-        bottom.setPadding(dp(18), dp(14), dp(18), dp(18));
-        bottom.setBackgroundColor(0xF5000000);
+        bottom.setPadding(dp(10), dp(8), dp(10), dp(10));
+        bottom.setBackgroundColor(0xF2111216);
+        FrameLayout.LayoutParams bottomLp = new FrameLayout.LayoutParams(-1, dp(156), Gravity.BOTTOM);
+        root.addView(bottom, bottomLp);
 
-        FrameLayout.LayoutParams bottomParams = new FrameLayout.LayoutParams(
-                FrameLayout.LayoutParams.MATCH_PARENT,
-                (int) (getResources().getDisplayMetrics().heightPixels * 0.40f),
-                Gravity.BOTTOM);
-        root.addView(bottom, bottomParams);
+        LinearLayout sourceRow = new LinearLayout(this);
+        sourceRow.setGravity(Gravity.CENTER_VERTICAL);
+        bottom.addView(sourceRow, new LinearLayout.LayoutParams(-1, dp(40)));
+        TextView scene = panel("SCENE 1  •  UVC CAPTURE");
+        sourceRow.addView(scene, new LinearLayout.LayoutParams(0, -1, 1f));
+        Button web = makeButton("+ WEB");
+        web.setOnClickListener(v -> addBrowserSource(root));
+        sourceRow.addView(web, new LinearLayout.LayoutParams(dp(82), dp(38)));
 
-        statusText = new TextView(this);
-        statusText.setText("UVC REPLAY BUFFER • WAITING FOR CAPTURE CARD");
-        statusText.setTextColor(Color.WHITE);
-        statusText.setTextSize(12);
-        statusText.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
-        bottom.addView(statusText, new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT, dp(24)));
+        LinearLayout controls = new LinearLayout(this);
+        controls.setGravity(Gravity.CENTER_VERTICAL);
+        controls.setPadding(0, dp(6), 0, 0);
+        bottom.addView(controls, new LinearLayout.LayoutParams(-1, dp(58)));
 
-        LinearLayout bitrateRow = new LinearLayout(this);
-        bitrateRow.setGravity(Gravity.CENTER_VERTICAL);
-        bottom.addView(bitrateRow, new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT, dp(54)));
+        Button replay = makeButton("↻ SAVE REPLAY");
+        replay.setOnClickListener(v -> exportReplay(replayBuffer.getBufferSeconds()));
+        controls.addView(replay, new LinearLayout.LayoutParams(0, dp(52), 1f));
 
-        TextView bitrateLabel = new TextView(this);
-        bitrateLabel.setText("BITRATE");
-        bitrateLabel.setTextColor(Color.WHITE);
-        bitrateLabel.setTextSize(13);
-        bitrateLabel.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
-        bitrateRow.addView(bitrateLabel, new LinearLayout.LayoutParams(dp(65), dp(48)));
+        recordButton = makeButton("● RECORD");
+        recordButton.setOnClickListener(v -> toggleRecording());
+        controls.addView(recordButton, new LinearLayout.LayoutParams(0, dp(52), 1f));
 
-        SeekBar slider = new SeekBar(this);
-        slider.setMax(MAX_BITRATE_KBPS - MIN_BITRATE_KBPS);
-        slider.setProgress(bitrateKbps - MIN_BITRATE_KBPS);
-        bitrateRow.addView(slider, new LinearLayout.LayoutParams(0, dp(48), 1f));
-
-        bitrateValue = new TextView(this);
-        bitrateValue.setText(bitrateKbps + " Kbps");
-        bitrateValue.setTextColor(Color.WHITE);
-        bitrateValue.setTextSize(13);
-        bitrateValue.setGravity(Gravity.CENTER);
-        bitrateRow.addView(bitrateValue, new LinearLayout.LayoutParams(dp(85), dp(48)));
-
-        slider.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-            @Override
-            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                bitrateKbps = MIN_BITRATE_KBPS + progress;
-                bitrateValue.setText(bitrateKbps + " Kbps");
-            }
-
-            @Override public void onStartTrackingTouch(SeekBar seekBar) { }
-            @Override public void onStopTrackingTouch(SeekBar seekBar) { }
-        });
-
-        LinearLayout buttons = new LinearLayout(this);
-        buttons.setGravity(Gravity.CENTER);
-        bottom.addView(buttons, new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT, dp(72)));
-
-        Button start = makeButton("START RECORDING");
-        Button stop = makeButton("STOP RECORDING");
-        Button clip = makeButton("RECORD LAST 30S");
-        clipButton = clip;
-
-        buttons.addView(start, new LinearLayout.LayoutParams(0, dp(58), 1f));
-        buttons.addView(stop, new LinearLayout.LayoutParams(0, dp(58), 1f));
-        buttons.addView(clip, new LinearLayout.LayoutParams(0, dp(58), 1f));
-
-        start.setOnClickListener(v -> startRecording());
-        stop.setOnClickListener(v -> stopRecording());
-        clip.setOnClickListener(v -> exportReplay(replayBuffer.getBufferSeconds()));
+        replayText = makeButton("30S");
+        replayText.setOnClickListener(v -> showReplaySettings());
+        controls.addView(replayText, new LinearLayout.LayoutParams(dp(72), dp(52)));
     }
 
-    private Button makeButton(String text) {
-        Button button = new Button(this);
-        button.setText(text);
-        button.setTextColor(Color.WHITE);
-        button.setTextSize(11);
-        button.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
-        button.setAllCaps(false);
-        button.setBackground(roundDrawable(0xFF000000, 0xFFFFFFFF, 2, 12));
-        return button;
-    }
-
-    private void startRecording() {
-        if (recordingStartedMs != 0L) {
-            Toast.makeText(this, "Recording is already running", Toast.LENGTH_SHORT).show();
-            return;
+    private void hideLegacyControls(FrameLayout root) {
+        int[] ids = {R.id.controlPanelLayout, R.id.toolbarBg, R.id.toolbarGroup, R.id.frameRateTv,
+                R.id.recTimerLayout, R.id.brightnessSb};
+        for (int id : ids) {
+            View v = root.findViewById(id);
+            if (v != null) v.setVisibility(View.GONE);
         }
-        recordingStartedMs = System.currentTimeMillis();
-        statusText.setText("● RECORDING • " + bitrateKbps + " Kbps");
-        Toast.makeText(this, "Recording started", Toast.LENGTH_SHORT).show();
     }
 
-    private void stopRecording() {
-        if (recordingStartedMs == 0L) {
-            Toast.makeText(this, "Nothing is recording", Toast.LENGTH_SHORT).show();
-            return;
-        }
-        long elapsed = Math.max(1L, (System.currentTimeMillis() - recordingStartedMs) / 1000L);
-        recordingStartedMs = 0L;
-        int seconds = (int) Math.min(elapsed, replayBuffer.getBufferSeconds());
-        exportReplay(seconds);
-        statusText.setText("UVC REPLAY BUFFER • READY");
+    private void addBrowserSource(ViewGroup root) {
+        ViewGroup layer = root.findViewById(R.id.browserSourceLayer);
+        if (layer != null) BrowserSourceOverlay.showUrlDialog(this, layer);
     }
 
-    private void exportReplay(int seconds) {
-        if (replayBuffer.getPacketCount() == 0) {
-            Toast.makeText(this, "Waiting for UVC video frames", Toast.LENGTH_SHORT).show();
+    private void toggleRecording() {
+        if (recording) {
+            cameraFragment.stopRecording();
+            recording = false;
+            recordButton.setText("● RECORD");
+            statusText.setText("● READY • REPLAY BUFFER " + replayBuffer.getBufferSeconds() + "S");
             return;
         }
         File movies = getExternalFilesDir(Environment.DIRECTORY_MOVIES);
@@ -203,76 +159,145 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
         String stamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(new Date());
-        File output = new File(movies, "Replay_" + stamp + ".mp4");
-        int width = cameraFragment.getReplayWidth();
-        int height = cameraFragment.getReplayHeight();
-        replayBuffer.exportLast(seconds, output, width, height, 60, (success, pathOrError) -> {
-            if (success) {
-                Toast.makeText(this, "Clip saved: " + pathOrError, Toast.LENGTH_LONG).show();
-            } else {
-                Toast.makeText(this, "Clip failed: " + pathOrError, Toast.LENGTH_LONG).show();
+        File output = new File(movies, "UVC_" + stamp + ".mp4");
+        cameraFragment.startRecording(new ICaptureCallBack() {
+            @Override public void onBegin() {
+                recording = true;
+                recordButton.setText("■ STOP");
+                statusText.setText("● RECORDING • " + qualityText.getText());
             }
-        });
+            @Override public void onError(String error) {
+                recording = false;
+                recordButton.setText("● RECORD");
+                Toast.makeText(MainActivity.this, error == null ? "Recording failed" : error, Toast.LENGTH_LONG).show();
+            }
+            @Override public void onComplete(String path) {
+                recording = false;
+                recordButton.setText("● RECORD");
+                statusText.setText("● READY • REPLAY BUFFER " + replayBuffer.getBufferSeconds() + "S");
+                Toast.makeText(MainActivity.this, "Saved recording", Toast.LENGTH_LONG).show();
+            }
+        }, output.getAbsolutePath());
     }
 
-    private void handleTopAction(int index) {
-        switch (index) {
-            case 0:
-                Toast.makeText(this, "UVC capture card is the active source", Toast.LENGTH_SHORT).show();
-                break;
-            case 1:
-                Toast.makeText(this, "Layers are reserved for future overlays", Toast.LENGTH_SHORT).show();
-                break;
-            case 2:
-                Toast.makeText(this, "Preset scene: Capture Card", Toast.LENGTH_SHORT).show();
-                break;
-            case 3:
-                showReplaySettings();
-                break;
-            default:
-                break;
+    private void showSettings() {
+        LinearLayout box = new LinearLayout(this);
+        box.setOrientation(LinearLayout.VERTICAL);
+        box.setPadding(dp(8), dp(4), dp(8), dp(4));
+
+        TextView quality = label("QUALITY", 11, true);
+        box.addView(quality, new LinearLayout.LayoutParams(-1, dp(30)));
+        for (int i = 0; i < QUALITIES.length; i++) {
+            final int index = i;
+            Button b = makeButton(QUALITIES[i].name + "  •  " + QUALITIES[i].bitrate + " Kbps");
+            b.setOnClickListener(v -> {
+                applyQuality(index);
+                ((AlertDialog) v.getTag()).dismiss();
+            });
+            box.addView(b, new LinearLayout.LayoutParams(-1, dp(44)));
+            b.setTag(null);
         }
+
+        TextView bitrate = label("CUSTOM BITRATE: " + bitrateKbps + " Kbps", 11, true);
+        box.addView(bitrate, new LinearLayout.LayoutParams(-1, dp(30)));
+        SeekBar slider = new SeekBar(this);
+        slider.setMax(MAX_BITRATE_KBPS - MIN_BITRATE_KBPS);
+        slider.setProgress(bitrateKbps - MIN_BITRATE_KBPS);
+        slider.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override public void onProgressChanged(SeekBar s, int p, boolean fromUser) {
+                bitrateKbps = MIN_BITRATE_KBPS + p;
+                bitrate.setText("CUSTOM BITRATE: " + bitrateKbps + " Kbps");
+            }
+            @Override public void onStartTrackingTouch(SeekBar s) { }
+            @Override public void onStopTrackingTouch(SeekBar s) { }
+        });
+        box.addView(slider, new LinearLayout.LayoutParams(-1, dp(40)));
+
+        AlertDialog dialog = new AlertDialog.Builder(this).setTitle("UVC Studio Settings").setView(box).setNegativeButton("Close", null).create();
+        dialog.show();
+        for (int i = 0; i < box.getChildCount(); i++) {
+            View child = box.getChildAt(i);
+            if (child instanceof Button) child.setTag(dialog);
+        }
+    }
+
+    private void applyQuality(int index) {
+        qualityIndex = index;
+        Quality q = QUALITIES[index];
+        bitrateKbps = q.bitrate;
+        H264EncodeProcessor.configureDefaults(q.fps, q.bitrate * 1000);
+        cameraFragment.configureQuality(q.width, q.height, q.fps, q.bitrate);
+        qualityText.setText(q.name);
+        statusText.setText("● APPLYING • " + q.name + " • " + q.bitrate + " Kbps");
+        Toast.makeText(this, q.name + " selected", Toast.LENGTH_SHORT).show();
     }
 
     private void showReplaySettings() {
         String[] options = {"30 seconds", "60 seconds", "90 seconds", "120 seconds"};
-        int checked;
-        switch (replayBuffer.getBufferSeconds()) {
-            case 60: checked = 1; break;
-            case 90: checked = 2; break;
-            case 120: checked = 3; break;
-            default: checked = 0;
-        }
+        int checked = replayBuffer.getBufferSeconds() == 60 ? 1 : replayBuffer.getBufferSeconds() == 90 ? 2 : replayBuffer.getBufferSeconds() == 120 ? 3 : 0;
         new AlertDialog.Builder(this)
                 .setTitle("Replay buffer")
                 .setSingleChoiceItems(options, checked, (dialog, which) -> {
                     int[] seconds = {30, 60, 90, 120};
                     replayBuffer.setBufferSeconds(seconds[which]);
-                    clipButton.setText("RECORD LAST " + seconds[which] + "S");
+                    replayText.setText(seconds[which] + "S");
+                    statusText.setText("● READY • REPLAY BUFFER " + seconds[which] + "S");
                     dialog.dismiss();
-                    Toast.makeText(this, "Replay buffer: " + seconds[which] + "s", Toast.LENGTH_SHORT).show();
-                })
-                .show();
+                }).show();
     }
 
-    private android.graphics.drawable.GradientDrawable roundDrawable(int fill, int stroke,
-                                                                       int strokeWidth, int radiusDp) {
-        android.graphics.drawable.GradientDrawable drawable = new android.graphics.drawable.GradientDrawable();
-        drawable.setColor(fill);
-        drawable.setCornerRadius(dp(radiusDp));
-        drawable.setStroke(dp(strokeWidth), stroke);
-        return drawable;
-    }
-
-    private int dp(int value) {
-        return Math.round(value * getResources().getDisplayMetrics().density);
-    }
-
-    @Override
-    protected void onDestroy() {
-        if (replayBuffer != null) {
-            replayBuffer.release();
+    private void exportReplay(int seconds) {
+        if (replayBuffer.getPacketCount() == 0) {
+            Toast.makeText(this, "Waiting for UVC frames", Toast.LENGTH_SHORT).show();
+            return;
         }
+        File movies = getExternalFilesDir(Environment.DIRECTORY_MOVIES);
+        if (movies == null) return;
+        String stamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(new Date());
+        File output = new File(movies, "Replay_" + stamp + ".mp4");
+        replayBuffer.exportLast(seconds, output, cameraFragment.getReplayWidth(), cameraFragment.getReplayHeight(), QUALITIES[qualityIndex].fps,
+                (success, pathOrError) -> Toast.makeText(this, success ? "Replay saved" : "Replay failed: " + pathOrError, Toast.LENGTH_LONG).show());
+    }
+
+    private TextView label(String text, int size, boolean bold) {
+        TextView v = new TextView(this);
+        v.setText(text); v.setTextColor(Color.WHITE); v.setTextSize(size);
+        v.setTypeface(Typeface.DEFAULT, bold ? Typeface.BOLD : Typeface.NORMAL);
+        v.setGravity(Gravity.CENTER_VERTICAL);
+        return v;
+    }
+
+    private TextView chip(String text) {
+        TextView v = label(text, 11, true);
+        v.setGravity(Gravity.CENTER);
+        v.setPadding(dp(10), 0, dp(10), 0);
+        v.setBackground(roundDrawable(0xFF272A31, 0xFF3A3D45, 1, 10));
+        return v;
+    }
+
+    private TextView panel(String text) {
+        TextView v = label(text, 11, true);
+        v.setPadding(dp(12), 0, dp(12), 0);
+        v.setBackground(roundDrawable(0xFF1A1C21, 0xFF2C2F36, 1, 9));
+        return v;
+    }
+
+    private Button makeButton(String text) {
+        Button b = new Button(this);
+        b.setText(text); b.setTextColor(Color.WHITE); b.setTextSize(11); b.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
+        b.setAllCaps(false); b.setBackground(roundDrawable(0xFF25282F, 0xFF3A3D45, 1, 10));
+        return b;
+    }
+
+    private android.graphics.drawable.GradientDrawable roundDrawable(int fill, int stroke, int width, int radiusDp) {
+        android.graphics.drawable.GradientDrawable d = new android.graphics.drawable.GradientDrawable();
+        d.setColor(fill); d.setCornerRadius(dp(radiusDp)); d.setStroke(dp(width), stroke); return d;
+    }
+
+    private int dp(int value) { return Math.round(value * getResources().getDisplayMetrics().density); }
+
+    @Override protected void onDestroy() {
+        if (replayBuffer != null) replayBuffer.release();
         super.onDestroy();
     }
 }
