@@ -22,22 +22,14 @@ import android.widget.Toast
 import kotlin.math.max
 import kotlin.math.min
 
-/**
- * A browser source that can be placed over the UVC preview.
- *
- * The source is deliberately kept as a normal Android view so it remains lightweight
- * and works with the existing demo UI. Recording/replay compositing is exposed as a
- * separate integration point; the stock CameraUVC encoder consumes the camera stream,
- * not Android view hierarchy pixels.
- */
+/** Interactive browser source for the UVC preview. */
 class BrowserSourceOverlay(context: Context) : FrameLayout(context) {
     private val webView = WebView(context)
     private val content = FrameLayout(context)
     private val toolbar = LinearLayout(context)
+    private val resizeHandle = TextView(context)
     private var lastX = 0f
     private var lastY = 0f
-    private var downRawX = 0f
-    private var downRawY = 0f
     private var cropEnabled = false
     private var cropLeft = 0
     private var cropTop = 0
@@ -48,11 +40,9 @@ class BrowserSourceOverlay(context: Context) : FrameLayout(context) {
         setBackgroundColor(Color.TRANSPARENT)
         isClickable = true
         buildWebView()
+        buildResizeHandle()
         buildControls()
-        addView(content, LayoutParams(dp(320), dp(180)))
-        (content.layoutParams as LayoutParams).apply {
-            gravity = Gravity.CENTER
-        }
+        addView(content, LayoutParams(dp(320), dp(180)).apply { gravity = Gravity.CENTER })
     }
 
     @SuppressLint("SetJavaScriptEnabled", "ClickableViewAccessibility")
@@ -72,22 +62,55 @@ class BrowserSourceOverlay(context: Context) : FrameLayout(context) {
                 MotionEvent.ACTION_DOWN -> {
                     lastX = event.rawX
                     lastY = event.rawY
-                    downRawX = event.rawX
-                    downRawY = event.rawY
                     true
                 }
                 MotionEvent.ACTION_MOVE -> {
                     val dx = event.rawX - lastX
                     val dy = event.rawY - lastY
-                    content.translationX += dx
-                    content.translationY += dy
+                    if (cropEnabled) {
+                        webView.translationX += dx
+                        webView.translationY += dy
+                    } else {
+                        content.translationX += dx
+                        content.translationY += dy
+                    }
                     lastX = event.rawX
                     lastY = event.rawY
                     true
                 }
-                MotionEvent.ACTION_UP -> {
+                MotionEvent.ACTION_UP -> true
+                else -> false
+            }
+        }
+    }
+
+    private fun buildResizeHandle() {
+        resizeHandle.text = "↘"
+        resizeHandle.textSize = 18f
+        resizeHandle.gravity = Gravity.CENTER
+        resizeHandle.setTextColor(Color.WHITE)
+        resizeHandle.setBackgroundColor(0xCC222222.toInt())
+        content.addView(resizeHandle, LayoutParams(dp(32), dp(32), Gravity.BOTTOM or Gravity.END))
+        resizeHandle.setOnTouchListener { _, event ->
+            when (event.actionMasked) {
+                MotionEvent.ACTION_DOWN -> {
+                    lastX = event.rawX
+                    lastY = event.rawY
                     true
                 }
+                MotionEvent.ACTION_MOVE -> {
+                    val dx = event.rawX - lastX
+                    val dy = event.rawY - lastY
+                    val lp = content.layoutParams
+                    lp.width = max(dp(120), lp.width + dx.toInt())
+                    lp.height = max(dp(80), lp.height + dy.toInt())
+                    content.layoutParams = lp
+                    updateCrop()
+                    lastX = event.rawX
+                    lastY = event.rawY
+                    true
+                }
+                MotionEvent.ACTION_UP -> true
                 else -> false
             }
         }
@@ -104,13 +127,12 @@ class BrowserSourceOverlay(context: Context) : FrameLayout(context) {
         addButton("Crop") {
             cropEnabled = !cropEnabled
             updateCrop()
-            Toast.makeText(context, if (cropEnabled) "Crop mode: drag content" else "Crop mode off", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, if (cropEnabled) "Crop mode: drag page" else "Crop mode off", Toast.LENGTH_SHORT).show()
         }
         addButton("URL") { showUrlDialog() }
         addButton("✕") { (parent as? ViewGroup)?.removeView(this) }
 
-        val toolbarLp = LayoutParams(-2, -2).apply { gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL }
-        addView(toolbar, toolbarLp)
+        addView(toolbar, LayoutParams(-2, -2).apply { gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL })
         setOnClickListener { toolbar.visibility = if (toolbar.visibility == View.VISIBLE) View.GONE else View.VISIBLE }
     }
 
@@ -148,6 +170,12 @@ class BrowserSourceOverlay(context: Context) : FrameLayout(context) {
 
     private fun updateCrop() {
         if (!cropEnabled) {
+            cropLeft = 0
+            cropTop = 0
+            cropRight = 0
+            cropBottom = 0
+            webView.translationX = 0f
+            webView.translationY = 0f
             content.clipBounds = null
             return
         }
@@ -173,11 +201,11 @@ class BrowserSourceOverlay(context: Context) : FrameLayout(context) {
             height = dp(heightDp)
         }
         content.requestLayout()
+        updateCrop()
     }
 
     fun getSourceWebView(): WebView = webView
 
-    /** Current UI transform, useful for a future GL/encoder compositor. */
     fun getTransformState(): TransformState = TransformState(
         content.translationX,
         content.translationY,
