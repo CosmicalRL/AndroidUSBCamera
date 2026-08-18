@@ -1,13 +1,9 @@
 package com.jiangdg.demo;
 
-import android.os.Bundle;
-
-import androidx.annotation.Nullable;
-
 import com.jiangdg.ausbc.MultiCameraClient;
 import com.jiangdg.ausbc.callback.ICameraStateCallBack;
 import com.jiangdg.ausbc.callback.IEncodeDataCallBack;
-import com.jiangdg.demo.R;
+import com.jiangdg.ausbc.camera.bean.PreviewSize;
 
 import java.nio.ByteBuffer;
 
@@ -25,6 +21,16 @@ public class ReplayCameraFragment extends DemoFragment {
 
     public ReplayBufferManager getReplayBufferManager() {
         return replayBufferManager;
+    }
+
+    public int getReplayWidth() {
+        PreviewSize size = getCurrentPreviewSize();
+        return size == null ? 1280 : size.getWidth();
+    }
+
+    public int getReplayHeight() {
+        PreviewSize size = getCurrentPreviewSize();
+        return size == null ? 720 : size.getHeight();
     }
 
     @Override
