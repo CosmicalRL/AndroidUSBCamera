@@ -2,15 +2,13 @@ package com.jiangdg.demo;
 
 import com.jiangdg.ausbc.MultiCameraClient;
 import com.jiangdg.ausbc.callback.ICameraStateCallBack;
+import com.jiangdg.ausbc.callback.ICaptureCallBack;
 import com.jiangdg.ausbc.callback.IEncodeDataCallBack;
 import com.jiangdg.ausbc.camera.bean.PreviewSize;
 
 import java.nio.ByteBuffer;
 
-/**
- * DemoFragment variant that keeps the libausbc UVC pipeline alive and exposes
- * its encoded H.264 stream to ReplayBufferManager.
- */
+/** Keeps the UVC H.264 stream alive for instant replay and normal recording. */
 public class ReplayCameraFragment extends DemoFragment {
     private ReplayBufferManager replayBufferManager;
     private boolean replayStreamRunning;
@@ -19,9 +17,7 @@ public class ReplayCameraFragment extends DemoFragment {
         replayBufferManager = manager;
     }
 
-    public ReplayBufferManager getReplayBufferManager() {
-        return replayBufferManager;
-    }
+    public ReplayBufferManager getReplayBufferManager() { return replayBufferManager; }
 
     public int getReplayWidth() {
         PreviewSize size = getCurrentPreviewSize();
@@ -33,31 +29,28 @@ public class ReplayCameraFragment extends DemoFragment {
         return size == null ? 720 : size.getHeight();
     }
 
+    public void startRecording(ICaptureCallBack callback, String path) {
+        captureVideoStart(callback, path, 0L);
+    }
+
+    public void stopRecording() { captureVideoStop(); }
+
     @Override
     public void onCameraState(MultiCameraClient.ICamera self,
-                               ICameraStateCallBack.State code,
-                               String msg) {
+                              ICameraStateCallBack.State code,
+                              String msg) {
         super.onCameraState(self, code, msg);
-        if (code == ICameraStateCallBack.State.OPENED) {
-            startReplayStream();
-        } else if (code == ICameraStateCallBack.State.CLOSED
-                || code == ICameraStateCallBack.State.ERROR) {
-            stopReplayStream();
-        }
+        if (code == ICameraStateCallBack.State.OPENED) startReplayStream();
+        else if (code == ICameraStateCallBack.State.CLOSED || code == ICameraStateCallBack.State.ERROR) stopReplayStream();
     }
 
     private void startReplayStream() {
-        if (replayStreamRunning || replayBufferManager == null) {
-            return;
-        }
+        if (replayStreamRunning || replayBufferManager == null) return;
         setEncodeDataCallBack(new IEncodeDataCallBack() {
             @Override
-            public void onEncodeData(DataType type, ByteBuffer buffer, int offset,
-                                     int size, long timestamp) {
+            public void onEncodeData(DataType type, ByteBuffer buffer, int offset, int size, long timestamp) {
                 ReplayBufferManager manager = replayBufferManager;
-                if (manager != null) {
-                    manager.addEncodedData(type, buffer, offset, size, timestamp);
-                }
+                if (manager != null) manager.addEncodedData(type, buffer, offset, size, timestamp);
             }
         });
         captureStreamStart();
@@ -65,13 +58,8 @@ public class ReplayCameraFragment extends DemoFragment {
     }
 
     private void stopReplayStream() {
-        if (!replayStreamRunning) {
-            return;
-        }
-        try {
-            captureStreamStop();
-        } catch (Exception ignored) {
-        }
+        if (!replayStreamRunning) return;
+        try { captureStreamStop(); } catch (Exception ignored) { }
         replayStreamRunning = false;
     }
 
