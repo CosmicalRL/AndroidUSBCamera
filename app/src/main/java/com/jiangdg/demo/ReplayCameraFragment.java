@@ -1,5 +1,8 @@
 package com.jiangdg.demo;
 
+import android.os.Handler;
+import android.os.Looper;
+
 import com.jiangdg.ausbc.MultiCameraClient;
 import com.jiangdg.ausbc.callback.ICameraStateCallBack;
 import com.jiangdg.ausbc.callback.ICaptureCallBack;
@@ -29,7 +32,14 @@ public class ReplayCameraFragment extends DemoFragment {
 
     public void configureQuality(int width, int height, int fps, int bitrateKbps) {
         H264EncodeProcessor.configureDefaults(fps, bitrateKbps * 1000);
-        if (isCameraOpened()) updateResolution(width, height);
+        if (!isCameraOpened()) return;
+
+        MultiCameraClient.ICamera camera = getCurrentCamera();
+        if (camera == null || camera.isRecording()) return;
+
+        stopReplayStream();
+        camera.closeCamera();
+        new Handler(Looper.getMainLooper()).postDelayed(camera::openCamera, 700L);
     }
 
     public void startRecording(ICaptureCallBack callback, String path) {
