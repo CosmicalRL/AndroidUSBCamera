@@ -18,298 +18,217 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-/**
- * RAM replay buffer for the H.264 stream emitted by libausbc.
- *
- * The library exposes encoded H.264 packets, so storing the encoded access units
- * is substantially cheaper than keeping raw 720p frames in Java heap. The
- * exporter writes those access units directly to an MP4 container with
- * MediaMuxer; no second video encode is required.
- */
 public final class ReplayBufferManager {
-    private static final long MICROS_PER_SECOND = 1_000_000L;
+    private static final long US = 1_000_000L;
     private static final long MAX_RAM_BYTES = 256L * 1024L * 1024L;
 
     private static final class Packet {
         final IEncodeDataCallBack.DataType type;
         final byte[] data;
-        final long timestampUs;
-
-        Packet(IEncodeDataCallBack.DataType type, byte[] data, long timestampUs) {
+        final long pts;
+        Packet(IEncodeDataCallBack.DataType type, byte[] data, long pts) {
             this.type = type;
             this.data = data;
-            this.timestampUs = timestampUs;
+            this.pts = pts;
         }
     }
 
-    public interface ExportCallback {
-        void onComplete(boolean success, String pathOrError);
-    }
+    public interface ExportCallback { void onComplete(boolean success, String pathOrError); }
 
     private final Object lock = new Object();
     private final Deque<Packet> packets = new ArrayDeque<>();
-    private final ExecutorService exportExecutor = Executors.newSingleThreadExecutor();
-    private final Handler mainHandler = new Handler(Looper.getMainLooper());
-
+    private final ExecutorService exporter = Executors.newSingleThreadExecutor();
+    private final Handler main = new Handler(Looper.getMainLooper());
     private volatile int bufferSeconds = 30;
-    private long bufferedBytes = 0;
-    private byte[] latestSps;
-    private byte[] latestPps;
+    private long ramBytes;
+    private byte[] sps;
+    private byte[] pps;
 
     public void setBufferSeconds(int seconds) {
-        if (seconds != 30 && seconds != 60 && seconds != 90 && seconds != 120) {
-            return;
+        if (seconds != 30 && seconds != 60 && seconds != 90 && seconds != 120) return;
+        synchronized (lock) {
+            bufferSeconds = seconds;
+            if (!packets.isEmpty()) trimLocked(packets.peekLast().pts);
         }
-        bufferSeconds = seconds;
-        trimLocked(System.nanoTime() / 1000L);
     }
 
-    public int getBufferSeconds() {
-        return bufferSeconds;
-    }
+    public int getBufferSeconds() { return bufferSeconds; }
 
     public void addEncodedData(IEncodeDataCallBack.DataType type, ByteBuffer buffer,
                                int offset, int size, long timestampUs) {
-        if (type == null || buffer == null || size <= 0 || offset < 0) {
-            return;
-        }
-        ByteBuffer copyBuffer = buffer.duplicate();
-        if (offset > copyBuffer.limit() || offset + size > copyBuffer.limit()) {
-            return;
-        }
-        copyBuffer.position(offset);
-        copyBuffer.limit(offset + size);
+        if (type == null || buffer == null || offset < 0 || size <= 0 || offset + size > buffer.limit()) return;
+        ByteBuffer copy = buffer.duplicate();
+        copy.position(offset);
+        copy.limit(offset + size);
         byte[] data = new byte[size];
-        copyBuffer.get(data);
+        copy.get(data);
 
         synchronized (lock) {
-            if (type == IEncodeDataCallBack.DataType.H264_SPS) {
-                updateSpsPps(data);
-            }
-            if (type == IEncodeDataCallBack.DataType.H264
-                    || type == IEncodeDataCallBack.DataType.H264_KEY) {
+            if (type == IEncodeDataCallBack.DataType.H264_SPS) updateSpsPps(data);
+            if (type == IEncodeDataCallBack.DataType.H264 || type == IEncodeDataCallBack.DataType.H264_KEY) {
                 packets.addLast(new Packet(type, data, timestampUs));
-                bufferedBytes += data.length;
+                ramBytes += data.length;
                 trimLocked(timestampUs);
             }
         }
     }
 
     public int getPacketCount() {
-        synchronized (lock) {
-            return packets.size();
-        }
+        synchronized (lock) { return packets.size(); }
     }
 
     public void clear() {
         synchronized (lock) {
             packets.clear();
-            bufferedBytes = 0;
-            latestSps = null;
-            latestPps = null;
+            ramBytes = 0;
+            sps = null;
+            pps = null;
         }
     }
 
-    public void exportLast(int seconds, File outputFile, int width, int height,
-                           int fps, ExportCallback callback) {
-        final List<Packet> snapshot;
-        final byte[] sps;
-        final byte[] pps;
+    public void exportLast(int seconds, File output, int width, int height, int fps,
+                           ExportCallback callback) {
+        final List<Packet> snapshot = new ArrayList<>();
+        final byte[] snapshotSps;
+        final byte[] snapshotPps;
         synchronized (lock) {
-            long newest = packets.isEmpty() ? 0 : packets.peekLast().timestampUs;
-            long cutoff = newest - seconds * MICROS_PER_SECOND;
-            snapshot = new ArrayList<>();
-            for (Packet packet : packets) {
-                if (packet.timestampUs >= cutoff) {
-                    snapshot.add(packet);
-                }
-            }
-            sps = latestSps == null ? null : latestSps.clone();
-            pps = latestPps == null ? null : latestPps.clone();
+            long newest = packets.isEmpty() ? 0 : packets.peekLast().pts;
+            long cutoff = newest - Math.max(1, seconds) * US;
+            for (Packet p : packets) if (p.pts >= cutoff) snapshot.add(p);
+            snapshotSps = sps == null ? null : sps.clone();
+            snapshotPps = pps == null ? null : pps.clone();
         }
 
-        exportExecutor.execute(() -> {
+        exporter.execute(() -> {
+            boolean ok = false;
             String result;
-            boolean success;
             try {
-                if (snapshot.isEmpty()) {
-                    throw new IOException("Replay buffer is empty");
-                }
-                success = writeMp4(snapshot, sps, pps, outputFile, width, height, fps);
-                result = success ? outputFile.getAbsolutePath() : "MP4 export failed";
+                if (snapshot.isEmpty()) throw new IOException("Replay buffer is empty");
+                writeMp4(snapshot, snapshotSps, snapshotPps, output, width, height, fps);
+                ok = true;
+                result = output.getAbsolutePath();
             } catch (Exception e) {
-                success = false;
                 result = e.getMessage() == null ? e.toString() : e.getMessage();
             }
-            final boolean done = success;
-            final String message = result;
-            mainHandler.post(() -> callback.onComplete(done, message));
+            boolean finalOk = ok;
+            String finalResult = result;
+            main.post(() -> callback.onComplete(finalOk, finalResult));
         });
     }
 
-    private boolean writeMp4(List<Packet> snapshot, byte[] sps, byte[] pps,
-                             File outputFile, int width, int height, int fps) throws IOException {
+    private void writeMp4(List<Packet> list, byte[] spsData, byte[] ppsData,
+                          File output, int width, int height, int fps) throws IOException {
         int firstKey = -1;
-        for (int i = 0; i < snapshot.size(); i++) {
-            if (snapshot.get(i).type == IEncodeDataCallBack.DataType.H264_KEY) {
-                firstKey = i;
-                break;
-            }
+        for (int i = 0; i < list.size(); i++) {
+            if (list.get(i).type == IEncodeDataCallBack.DataType.H264_KEY) { firstKey = i; break; }
         }
-        if (firstKey < 0) {
-            throw new IOException("Waiting for an H.264 key frame");
-        }
-        if (sps == null || pps == null) {
-            throw new IOException("Waiting for H.264 SPS/PPS");
-        }
+        if (firstKey < 0) throw new IOException("Waiting for H.264 key frame");
+        if (spsData == null || ppsData == null) throw new IOException("Waiting for H.264 SPS/PPS");
 
-        File parent = outputFile.getParentFile();
-        if (parent != null && !parent.exists() && !parent.mkdirs()) {
-            throw new IOException("Cannot create output directory");
-        }
-        if (outputFile.exists() && !outputFile.delete()) {
-            throw new IOException("Cannot replace output file");
-        }
+        File parent = output.getParentFile();
+        if (parent != null && !parent.exists() && !parent.mkdirs()) throw new IOException("Cannot create output directory");
+        if (output.exists() && !output.delete()) throw new IOException("Cannot replace output file");
 
         MediaMuxer muxer = null;
         try {
-            MediaFormat videoFormat = MediaFormat.createVideoFormat(MediaFormat.MIMETYPE_VIDEO_AVC,
-                    width, height);
-            videoFormat.setInteger(MediaFormat.KEY_FRAME_RATE, Math.max(1, fps));
-            videoFormat.setByteBuffer("csd-0", ByteBuffer.wrap(sps));
-            videoFormat.setByteBuffer("csd-1", ByteBuffer.wrap(pps));
+            MediaFormat format = MediaFormat.createVideoFormat(MediaFormat.MIMETYPE_VIDEO_AVC, width, height);
+            format.setInteger(MediaFormat.KEY_FRAME_RATE, Math.max(1, fps));
+            format.setByteBuffer("csd-0", ByteBuffer.wrap(spsData));
+            format.setByteBuffer("csd-1", ByteBuffer.wrap(ppsData));
 
-            muxer = new MediaMuxer(outputFile.getAbsolutePath(),
-                    MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4);
-            int videoTrack = muxer.addTrack(videoFormat);
+            muxer = new MediaMuxer(output.getAbsolutePath(), MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4);
+            int track = muxer.addTrack(format);
             muxer.start();
 
-            long baseTimestamp = snapshot.get(firstKey).timestampUs;
-            long lastTimestamp = -1;
+            long base = list.get(firstKey).pts;
+            long lastPts = -1;
             MediaCodec.BufferInfo info = new MediaCodec.BufferInfo();
-
-            for (int i = firstKey; i < snapshot.size(); i++) {
-                Packet packet = snapshot.get(i);
-                if (packet.type != IEncodeDataCallBack.DataType.H264
-                        && packet.type != IEncodeDataCallBack.DataType.H264_KEY) {
-                    continue;
-                }
-                byte[] sample = toAvccSample(packet.data);
-                long pts = Math.max(0, packet.timestampUs - baseTimestamp);
-                if (pts <= lastTimestamp) {
-                    pts = lastTimestamp + 1;
-                }
-                lastTimestamp = pts;
-                info.set(0, sample.length, pts, packet.type == IEncodeDataCallBack.DataType.H264_KEY
-                        ? MediaCodec.BUFFER_FLAG_KEY_FRAME : 0);
-                muxer.writeSampleData(videoTrack, ByteBuffer.wrap(sample), info);
+            for (int i = firstKey; i < list.size(); i++) {
+                Packet p = list.get(i);
+                if (p.type != IEncodeDataCallBack.DataType.H264 && p.type != IEncodeDataCallBack.DataType.H264_KEY) continue;
+                byte[] sample = toAvcc(p.data);
+                long pts = Math.max(0, p.pts - base);
+                if (pts <= lastPts) pts = lastPts + 1;
+                lastPts = pts;
+                int flags = p.type == IEncodeDataCallBack.DataType.H264_KEY ? MediaCodec.BUFFER_FLAG_KEY_FRAME : 0;
+                info.set(0, sample.length, pts, flags);
+                muxer.writeSampleData(track, ByteBuffer.wrap(sample), info);
             }
             muxer.stop();
-            return true;
         } finally {
-            if (muxer != null) {
-                try {
-                    muxer.release();
-                } catch (Exception ignored) {
-                }
-            }
+            if (muxer != null) try { muxer.release(); } catch (Exception ignored) { }
         }
     }
 
-    private void trimLocked(long newestTimestampUs) {
-        long cutoff = newestTimestampUs - bufferSeconds * MICROS_PER_SECOND;
-        while (!packets.isEmpty()) {
-            Packet first = packets.peekFirst();
-            if (first.timestampUs >= cutoff && bufferedBytes <= MAX_RAM_BYTES) {
-                break;
-            }
-            packets.removeFirst();
-            bufferedBytes -= first.data.length;
-        }
-        while (!packets.isEmpty() && bufferedBytes > MAX_RAM_BYTES) {
-            Packet first = packets.removeFirst();
-            bufferedBytes -= first.data.length;
+    private void trimLocked(long newestPts) {
+        long cutoff = newestPts - bufferSeconds * US;
+        while (!packets.isEmpty() && (packets.peekFirst().pts < cutoff || ramBytes > MAX_RAM_BYTES)) {
+            ramBytes -= packets.removeFirst().data.length;
         }
     }
 
     private void updateSpsPps(byte[] data) {
-        List<byte[]> nals = splitAnnexBNals(data);
+        List<byte[]> nals = splitAnnexB(data);
         if (nals.size() >= 2) {
-            latestSps = nals.get(0);
-            latestPps = nals.get(1);
+            sps = nals.get(0);
+            pps = nals.get(1);
         } else if (nals.size() == 1) {
-            int nalType = nals.get(0)[0] & 0x1F;
-            if (nalType == 7) {
-                latestSps = nals.get(0);
-            } else if (nalType == 8) {
-                latestPps = nals.get(0);
-            }
+            int type = nals.get(0)[0] & 0x1F;
+            if (type == 7) sps = nals.get(0);
+            if (type == 8) pps = nals.get(0);
         }
     }
 
-    private static List<byte[]> splitAnnexBNals(byte[] data) {
-        List<byte[]> result = new ArrayList<>();
-        int start = findStartCode(data, 0);
-        if (start < 0) {
-            return result;
-        }
+    private static List<byte[]> splitAnnexB(byte[] data) {
+        List<byte[]> out = new ArrayList<>();
+        int start = findStart(data, 0);
         while (start >= 0) {
-            int prefix = startCodeLength(data, start);
-            int next = findStartCode(data, start + prefix);
+            int prefix = startLength(data, start);
+            int next = findStart(data, start + prefix);
             int end = next >= 0 ? next : data.length;
             if (end > start + prefix) {
                 byte[] nal = new byte[end - start - prefix];
                 System.arraycopy(data, start + prefix, nal, 0, nal.length);
-                result.add(nal);
+                out.add(nal);
             }
             start = next;
         }
-        return result;
+        return out;
     }
 
-    private static int findStartCode(byte[] data, int from) {
-        for (int i = Math.max(0, from); i + 3 < data.length; i++) {
-            if (data[i] == 0 && data[i + 1] == 0 && data[i + 2] == 1) {
-                return i;
-            }
-            if (i + 4 <= data.length && data[i] == 0 && data[i + 1] == 0
-                    && data[i + 2] == 0 && data[i + 3] == 1) {
-                return i;
-            }
+    private static int findStart(byte[] d, int from) {
+        for (int i = Math.max(0, from); i + 3 < d.length; i++) {
+            if (d[i] == 0 && d[i + 1] == 0 && d[i + 2] == 1) return i;
+            if (i + 4 <= d.length && d[i] == 0 && d[i + 1] == 0 && d[i + 2] == 0 && d[i + 3] == 1) return i;
         }
         return -1;
     }
 
-    private static int startCodeLength(byte[] data, int index) {
-        return index + 3 < data.length && data[index] == 0 && data[index + 1] == 0
-                && data[index + 2] == 0 && data[index + 3] == 1 ? 4 : 3;
+    private static int startLength(byte[] d, int i) {
+        return i + 3 < d.length && d[i] == 0 && d[i + 1] == 0 && d[i + 2] == 0 && d[i + 3] == 1 ? 4 : 3;
     }
 
-    private static byte[] toAvccSample(byte[] data) throws IOException {
-        List<byte[]> nals = splitAnnexBNals(data);
-        if (nals.isEmpty()) {
-            return data;
-        }
+    private static byte[] toAvcc(byte[] data) {
+        List<byte[]> nals = splitAnnexB(data);
+        if (nals.isEmpty()) return data;
         int total = 0;
-        for (byte[] nal : nals) {
-            total += 4 + nal.length;
-        }
-        byte[] output = new byte[total];
+        for (byte[] n : nals) total += 4 + n.length;
+        byte[] out = new byte[total];
         int pos = 0;
-        for (byte[] nal : nals) {
-            int len = nal.length;
-            output[pos++] = (byte) ((len >>> 24) & 0xFF);
-            output[pos++] = (byte) ((len >>> 16) & 0xFF);
-            output[pos++] = (byte) ((len >>> 8) & 0xFF);
-            output[pos++] = (byte) (len & 0xFF);
-            System.arraycopy(nal, 0, output, pos, nal.length);
-            pos += nal.length;
+        for (byte[] n : nals) {
+            int len = n.length;
+            out[pos++] = (byte) (len >>> 24);
+            out[pos++] = (byte) (len >>> 16);
+            out[pos++] = (byte) (len >>> 8);
+            out[pos++] = (byte) len;
+            System.arraycopy(n, 0, out, pos, n.length);
+            pos += n.length;
         }
-        return output;
+        return out;
     }
 
     public void release() {
-        exportExecutor.shutdownNow();
+        exporter.shutdownNow();
         clear();
     }
 }
