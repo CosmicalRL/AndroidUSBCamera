@@ -9,14 +9,14 @@ import com.jiangdg.ausbc.utils.Logger
 import com.jiangdg.natives.YUVUtils
 import java.nio.ByteBuffer
 
-/** H.264 encoder with configurable frame rate and bitrate. */
+/** H.264 encoder with configurable app-level frame rate and bitrate. */
 class H264EncodeProcessor(
     val width: Int,
     val height: Int,
     private val gLESRender: Boolean = false,
     private val isPortrait: Boolean = true,
-    private val frameRate: Int = 30,
-    private val bitRate: Int = 0
+    private val frameRate: Int = defaultFrameRate,
+    private val bitRate: Int = defaultBitRate
 ) : AbstractProcessor(true) {
     private var mReadyListener: OnEncodeReadyListener? = null
 
@@ -24,12 +24,11 @@ class H264EncodeProcessor(
 
     override fun handleStartEncode() {
         try {
+            val actualFps = frameRate.coerceIn(1, 120)
+            val actualBitrate = if (bitRate > 0) bitRate else getEncodeBitrate(width, height, actualFps)
             val mediaFormat = MediaFormat.createVideoFormat(MIME, width, height)
-            mediaFormat.setInteger(MediaFormat.KEY_FRAME_RATE, frameRate.coerceIn(1, 120))
-            mediaFormat.setInteger(
-                MediaFormat.KEY_BIT_RATE,
-                if (bitRate > 0) bitRate else getEncodeBitrate(width, height, frameRate)
-            )
+            mediaFormat.setInteger(MediaFormat.KEY_FRAME_RATE, actualFps)
+            mediaFormat.setInteger(MediaFormat.KEY_BIT_RATE, actualBitrate)
             mediaFormat.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, KEY_FRAME_INTERVAL)
             mediaFormat.setInteger(MediaFormat.KEY_COLOR_FORMAT, getSupportColorFormat())
             mMediaCodec = MediaCodec.createEncoderByType(MIME)
@@ -38,7 +37,7 @@ class H264EncodeProcessor(
             mMediaCodec?.start()
             mEncodeState.set(true)
             doEncodeData()
-            Logger.i(TAG, "H264 encoder ready ${width}x${height}@${frameRate} ${if (bitRate > 0) bitRate else getEncodeBitrate(width, height, frameRate)}bps")
+            Logger.i(TAG, "H264 encoder ready ${width}x${height}@${actualFps} ${actualBitrate}bps")
         } catch (e: Exception) {
             Logger.e(TAG, "start h264 media codec failed, err = ${e.localizedMessage}", e)
         }
@@ -99,5 +98,14 @@ class H264EncodeProcessor(
         private const val TAG = "H264EncodeProcessor"
         private const val MIME = "video/avc"
         private const val KEY_FRAME_INTERVAL = 1
+
+        @JvmField var defaultFrameRate: Int = 60
+        @JvmField var defaultBitRate: Int = 0
+
+        @JvmStatic
+        fun configureDefaults(frameRate: Int, bitRate: Int) {
+            defaultFrameRate = frameRate.coerceIn(1, 120)
+            defaultBitRate = bitRate.coerceAtLeast(0)
+        }
     }
 }
