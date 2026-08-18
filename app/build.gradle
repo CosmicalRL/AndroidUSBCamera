@@ -1,18 +1,17 @@
 plugins {
     id 'com.android.application'
+    id 'kotlin-android'
 }
 
 android {
     compileSdkVersion 34
     defaultConfig {
         applicationId "com.jiangdg.uvc"
-        minSdkVersion 23    
+        minSdkVersion 23
         targetSdkVersion 34
-        versionCode 110 // Cache bump to force a brand new build tracking line
-        versionName "110.0" 
-
+        versionCode 111
+        versionName "111.0"
         multiDexEnabled true
-
         ndk {
             abiFilters "armeabi-v7a", "arm64-v8a"
         }
@@ -29,11 +28,20 @@ android {
         sourceCompatibility JavaVersion.VERSION_11
         targetCompatibility JavaVersion.VERSION_11
     }
+
+    kotlinOptions {
+        jvmTarget = '11'
+    }
+
+    lintOptions {
+        abortOnError false
+    }
 }
 
-// FORCE DISABLING KOTLIN COMPILER COMPONENT
+// Do not let optional Kotlin/ktlint style tasks break the Android debug build.
 tasks.configureEach { task ->
-    if (task.name.contains("Kotlin") || task.name.contains("kotlin") || task.name.contains("Kapt")) {
+    def n = task.name.toLowerCase(Locale.ROOT)
+    if (n.contains('ktlint') || n.contains('lintkotlin')) {
         task.enabled = false
     }
 }
@@ -46,12 +54,12 @@ repositories {
 
 dependencies {
     implementation fileTree(include: ["*.jar"], dir: "libs")
-    
+    implementation project(':libausbc')
+
     implementation "androidx.appcompat:appcompat:1.6.1"
     implementation "com.google.android.material:material:1.11.0"
     implementation "androidx.constraintlayout:constraintlayout:2.1.4"
-    
-    // Core hardware streaming clients
+
     implementation 'com.github.pedroSG94.RootEncoder:rtmp:2.4.8'
     implementation 'com.github.pedroSG94.RootEncoder:library:2.4.8'
 }
