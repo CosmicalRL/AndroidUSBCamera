@@ -16,6 +16,17 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/toolbarBg"/>
 
+    <FrameLayout
+        android:id="@+id/browserSourceLayer"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:clipChildren="false"
+        android:clipToPadding="false"
+        app:layout_constraintBottom_toBottomOf="@id/cameraViewContainer"
+        app:layout_constraintEnd_toEndOf="@id/cameraViewContainer"
+        app:layout_constraintStart_toStartOf="@id/cameraViewContainer"
+        app:layout_constraintTop_toTopOf="@id/cameraViewContainer" />
+
     <ImageView
         android:id="@+id/uvcLogoIv"
         android:layout_width="wrap_content"
@@ -77,9 +88,24 @@
         android:id="@+id/resolutionBtn"
         style="@style/Camera2TopButtonStyle"
         android:src="@mipmap/camera_resolution"
-        app:layout_constraintBottom_toBottomOf="@+id/toolbarBg"
+        app:layout_constraintBottom_toBottomOf="@id/toolbarBg"
         app:layout_constraintEnd_toEndOf="@id/toolbarBg"
         app:layout_constraintStart_toEndOf="@id/voiceBtn"
+        app:layout_constraintTop_toTopOf="@id/toolbarBg" />
+
+    <TextView
+        android:id="@+id/browserSourceBtn"
+        android:layout_width="48dp"
+        android:layout_height="36dp"
+        android:layout_marginEnd="8dp"
+        android:background="#CC222222"
+        android:gravity="center"
+        android:text="WEB"
+        android:textColor="@color/white"
+        android:textSize="12sp"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toBottomOf="@id/toolbarBg"
+        app:layout_constraintEnd_toEndOf="@id/toolbarBg"
         app:layout_constraintTop_toTopOf="@id/toolbarBg" />
 
     <androidx.constraintlayout.widget.Barrier
