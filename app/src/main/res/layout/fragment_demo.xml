@@ -1,11 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#FF0D0E10">
 
-    <!-- Camera canvas -->
     <FrameLayout
         android:id="@+id/cameraViewContainer"
         android:layout_width="match_parent"
@@ -13,7 +11,6 @@
         android:layout_marginBottom="188dp"
         android:background="#FF050608" />
 
-    <!-- Browser sources live above the camera canvas -->
     <FrameLayout
         android:id="@+id/browserSourceLayer"
         android:layout_width="match_parent"
@@ -30,7 +27,6 @@
         android:src="@mipmap/ic_uvc"
         android:visibility="visible" />
 
-    <!-- Floating studio header -->
     <LinearLayout
         android:id="@+id/toolbarBg"
         android:layout_width="match_parent"
@@ -38,39 +34,68 @@
         android:layout_gravity="top"
         android:gravity="center_vertical"
         android:orientation="horizontal"
-        android:paddingStart="10dp"
+        android:paddingStart="12dp"
         android:paddingEnd="8dp"
         android:background="#D90D0E10">
-
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="40dp"
             android:gravity="center_vertical"
-            android:text="  UVC STUDIO"
+            android:text="UVC STUDIO"
             android:textColor="#FFFFFFFF"
             android:textSize="13sp"
             android:textStyle="bold" />
-
         <Space android:layout_width="0dp" android:layout_height="1dp" android:layout_weight="1" />
-
         <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="32dp"
+            android:layout_marginEnd="8dp"
+            android:gravity="center"
+            android:text="720p • 60"
+            android:textColor="#FF9EA2AA"
+            android:textSize="10sp" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/toolbarGroup"
+        android:layout_width="wrap_content"
+        android:layout_height="52dp"
+        android:layout_gravity="top|end"
+        android:layout_marginTop="3dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingEnd="6dp">
+        <com.jiangdg.demo.BrowserSourceButton
             android:id="@+id/browserSourceBtn"
             android:layout_width="56dp"
             android:layout_height="38dp"
-            android:layout_marginEnd="6dp"
+            android:layout_marginEnd="5dp"
             android:background="@drawable/studio_chip_bg"
             android:gravity="center"
             android:text="WEB"
             android:textColor="#FFFFFFFF"
             android:textSize="11sp"
             android:textStyle="bold" />
-
+        <ImageView
+            android:id="@+id/effects_btn"
+            style="@style/Camera2TopButtonStyle"
+            android:src="@mipmap/camera_toolbar_filter"
+            android:contentDescription="Effects" />
+        <ImageView
+            android:id="@+id/cameraTypeBtn"
+            style="@style/Camera2TopButtonStyle"
+            android:src="@mipmap/camera_toolbar_type"
+            android:contentDescription="Camera type" />
+        <ImageView
+            android:id="@+id/voiceBtn"
+            style="@style/Camera2TopButtonStyle"
+            android:src="@mipmap/camera_voice_off"
+            android:contentDescription="Microphone" />
         <ImageView
             android:id="@+id/settingsBtn"
             style="@style/Camera2TopButtonStyle"
             android:src="@mipmap/camera_toolbar_more"
             android:contentDescription="Settings" />
-
         <ImageView
             android:id="@+id/resolutionBtn"
             style="@style/Camera2TopButtonStyle"
@@ -78,26 +103,6 @@
             android:contentDescription="Resolution" />
     </LinearLayout>
 
-    <!-- Keep existing toolbar controls available to DemoFragment; visually they are grouped in the studio header. -->
-    <LinearLayout
-        android:id="@+id/studioHiddenToolbarControls"
-        android:layout_width="1dp"
-        android:layout_height="1dp"
-        android:layout_gravity="top|start"
-        android:visibility="gone">
-        <ImageView android:id="@+id/effects_btn" android:layout_width="1dp" android:layout_height="1dp" />
-        <ImageView android:id="@+id/cameraTypeBtn" android:layout_width="1dp" android:layout_height="1dp" />
-        <ImageView android:id="@+id/voiceBtn" android:layout_width="1dp" android:layout_height="1dp" />
-    </LinearLayout>
-
-    <androidx.constraintlayout.widget.Group
-        android:id="@+id/toolbarGroup"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:visibility="visible"
-        app:constraint_referenced_ids="settingsBtn,effects_btn,cameraTypeBtn,voiceBtn,resolutionBtn" />
-
-    <!-- Performance/status pill -->
     <TextView
         android:id="@+id/frameRateTv"
         android:layout_width="wrap_content"
@@ -113,7 +118,6 @@
         android:textColor="#FFE8E8EA"
         android:textSize="11sp" />
 
-    <!-- OBS/PRISM-style bottom studio dock -->
     <LinearLayout
         android:id="@+id/controlPanelLayout"
         android:layout_width="match_parent"
@@ -126,12 +130,10 @@
         android:paddingBottom="8dp"
         android:background="#FF111216">
 
-        <!-- Scene / source strip -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="48dp"
             android:orientation="horizontal">
-
             <TextView
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
@@ -142,7 +144,6 @@
                 android:text="SCENE 1\nMain Camera"
                 android:textColor="#FFFFFFFF"
                 android:textSize="11sp" />
-
             <TextView
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
@@ -154,7 +155,6 @@
                 android:text="SOURCES\nCamera • Web"
                 android:textColor="#FFFFFFFF"
                 android:textSize="11sp" />
-
             <TextView
                 android:layout_width="44dp"
                 android:layout_height="match_parent"
@@ -166,14 +166,12 @@
                 android:textSize="22sp" />
         </LinearLayout>
 
-        <!-- Mode selector -->
         <androidx.constraintlayout.widget.ConstraintLayout
             android:id="@+id/modeSwitchLayout"
             android:layout_width="wrap_content"
             android:layout_height="30dp"
             android:layout_gravity="center_horizontal"
             android:layout_marginTop="5dp">
-
             <TextView
                 android:id="@+id/takePictureModeTv"
                 android:layout_width="wrap_content"
@@ -187,7 +185,6 @@
                 android:textStyle="bold"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent" />
-
             <TextView
                 android:id="@+id/recordVideoModeTv"
                 android:layout_width="wrap_content"
@@ -201,7 +198,6 @@
                 android:textStyle="bold"
                 app:layout_constraintStart_toEndOf="@id/takePictureModeTv"
                 app:layout_constraintTop_toTopOf="parent" />
-
             <TextView
                 android:id="@+id/recordAudioModeTv"
                 android:layout_width="wrap_content"
@@ -217,11 +213,9 @@
                 app:layout_constraintTop_toTopOf="parent" />
         </androidx.constraintlayout.widget.ConstraintLayout>
 
-        <!-- Capture row -->
         <FrameLayout
             android:layout_width="match_parent"
             android:layout_height="82dp">
-
             <com.jiangdg.ausbc.widget.PreviewImageView
                 android:id="@+id/albumPreviewIv"
                 android:layout_width="46dp"
@@ -229,13 +223,11 @@
                 android:layout_gravity="center_vertical|start"
                 android:scaleType="centerCrop"
                 android:src="@mipmap/camera_album_white" />
-
             <com.jiangdg.ausbc.widget.CaptureMediaView
                 android:id="@+id/captureBtn"
                 android:layout_width="68dp"
                 android:layout_height="68dp"
                 android:layout_gravity="center" />
-
             <ImageView
                 android:id="@+id/lensFacingBtn1"
                 android:layout_width="48dp"
@@ -247,7 +239,6 @@
         </FrameLayout>
     </LinearLayout>
 
-    <!-- Brightness is still controlled by DemoFragment; keep it available but subtle. -->
     <SeekBar
         android:id="@+id/brightnessSb"
         android:layout_width="160dp"
